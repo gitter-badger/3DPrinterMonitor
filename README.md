@@ -7,6 +7,8 @@ A website to monitor a 3D printer activity
 
 Creation date: 04/2010
 
+Development time: 2 weeks
+
 Requirements :
 
 - PHP 5.5 with Zend Framework (see Lab repo) and MySQL
@@ -34,3 +36,5 @@ Screenshots
 <img src="README_files/2.png" width="716" height="454">
 
 <img src="README_files/3.png" width="716" height="454">
+
+<img src="README_files/4.png" width="716" height="454">
