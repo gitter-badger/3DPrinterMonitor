@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:GridItemRenderer xmlns:fx="http://ns.adobe.com/mxml/2009"
+					xmlns:s="library://ns.adobe.com/flex/spark"
+					xmlns:mx="library://ns.adobe.com/flex/mx"
+					clipAndEnableScrolling="true">
+	<fx:Script>
+		<![CDATA[
+			import Model.Constants;
+			
+			override protected function updateDisplayList(unscaledWidth:Number, unscaledHeight:Number):void 
+			{
+				setView();
+				super.updateDisplayList(unscaledWidth, unscaledHeight);
+			}
+			
+			override public function prepare(hasBeenRecycled:Boolean):void
+			{
+				setView();
+				//this.validateNow();
+			}
+			
+			private function setView():void
+			{
+				if (!data)
+					return;
+				if (!data[column.dataField])
+					return;
+				var value:int = data[column.dataField];
+				trace("QA value: "+value);
+				if(value < 80)
+				{
+					barcolor.color = 0xFF0000;
+					if(value > 0)
+					{
+						mainGroup.percentWidth = value;
+					}
+					else
+					{
+						mainGroup.percentWidth = 100;
+					}
+				}	
+				else
+				{
+					barcolor.color = Constants.CHART_COLOR_GREEN;
+					mainGroup.percentWidth = value;
+				} 
+			}
+		]]>
+	</fx:Script>
+	<s:Group id="mainGroup" height="100%">
+		<s:Rect id="bar"
+				width="100%"
+				height="100%">
+			<s:fill>
+				<s:SolidColor id="barcolor"/>
+			</s:fill>
+		</s:Rect>
+		<s:Label id="lblData"
+				 text="{data.QA}"
+				 width="100%"
+				 fontSize="17"
+				 color="#FFFFFF"
+				 fontWeight="bold"
+				 verticalCenter="1"
+				 paddingRight="7"
+				 textAlign="right"/>
+	</s:Group>
+</s:GridItemRenderer>

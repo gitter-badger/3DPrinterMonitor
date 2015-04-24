@@ -1,0 +1,347 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:printlogsservice="services.printlogsservice.*"
+		  xmlns:printlogsservices="services.printlogsservices.*"
+		  horizontalAlign="center"
+		  color="#EEEEEE"
+		  width="100%"
+		  height="100%"
+		  paddingBottom="0"
+		  paddingLeft="10"
+		  paddingRight="0"
+		  paddingTop="0"
+		  gap="0"
+		  creationComplete="vgroup1_creationCompleteHandler(event)"
+		  xmlns:filters="away3d.filters.*"
+		  xmlns:View="View.*"
+		  xmlns:Components="View.Components.*">
+	<fx:Script>
+		<![CDATA[
+			import Control.InteractionEvent;
+			import Control.ServerEvent;
+
+			import Model.Constants;
+
+			import View.Components.CreatePrintLogForm;
+			import View.Components.PrintImagesViewer;
+
+			import flash.utils.setTimeout;
+
+			import mx.charts.ChartItem;
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CollectionEvent;
+			import mx.events.FlexEvent;
+			import mx.graphics.IFill;
+			import mx.graphics.SolidColor;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+
+			import spark.events.GridEvent;
+
+			import valueObjects.PrintLogs;
+
+			[Bindable]
+			public var modelID:int;
+
+			protected function newPrintLogBtn_clickHandler(event:MouseEvent):void
+			{
+				var tmp:CreatePrintLogForm=new CreatePrintLogForm();
+				tmp.modelID=FlexGlobals.topLevelApplication.selectedModel.idmodels;
+				PopUpManager.addPopUp(tmp, this, true);
+				PopUpManager.centerPopUp(tmp);
+			}
+
+			[Bindable]
+			public var piechartProvider:ArrayCollection=new ArrayCollection();
+
+			protected function vgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				systemManager.addEventListener(ServerEvent.REFRESH_MODELS, handleServerEvent, true);
+				systemManager.addEventListener(ServerEvent.REFRESH_PRINTLOGS, handleServerEvent, true);
+				systemManager.addEventListener(InteractionEvent.SELECTED_MODEL_CHANGED, handleSelectedModelChanged, true);
+				modelID=FlexGlobals.topLevelApplication.selectedModel.idmodels;
+				getAllPrintLogsByModelIDResult.token=printLogsServices.getAllPrintLogsByModelID(modelID);
+			}
+
+			private function handleCollectionChanged(event:CollectionEvent):void
+			{
+				if (piechartProvider.length == getAllPrintLogsByModelIDResult.lastResult.length)
+				{
+					return;
+				}
+				piechartProvider=new ArrayCollection(getAllPrintLogsByModelIDResult.lastResult.toArray());
+				//piechartProvider.filterFunction = filterPieChartProvider;
+				piechartProvider.refresh();
+				//trace(new Date().toDateString() + " collection changed, piecharProvider has " + piechartProvider.length + " items.");
+			}
+
+			private var fails:int=0;
+			private var wins:int=0;
+			[Bindable]
+			public var failsWins:ArrayCollection;
+			[Bindable]
+			public var averageTime:int=0;
+			[Bindable]
+			public var averageWinTime:int=0;
+			[Bindable]
+			public var averageQA:int=0;
+			[Bindable]
+			public var averageWeight:int=0;
+
+			private function countFails(source:ArrayCollection):void
+			{
+				fails=0;
+				wins=0;
+				averageQA=0;
+				averageTime=0;
+				var totalWeight:int=FlexGlobals.topLevelApplication.selectedModel.weight * source.length;
+				failsWins=new ArrayCollection();
+				for (var index:int=0; index < source.length; index++)
+				{
+					if (source.getItemAt(index).QA < Constants.FAIL_LEVEL)
+					{
+						fails++
+					}
+					else
+					{
+						wins++;
+					}
+					averageQA+=source.getItemAt(index).QA;
+					averageTime+=source.getItemAt(index).time;
+					averageWinTime+=source.getItemAt(index).time;
+				}
+
+				var failWeight:int=FlexGlobals.topLevelApplication.selectedModel.weight * fails;
+				var winWeight:int=FlexGlobals.topLevelApplication.selectedModel.weight * wins;
+				failsWins.addItem(fails);
+				failsWins.addItem(wins);
+				var uniqueCost:String="";
+				var uniqueWeight:String="";
+				var originalCost:String=(FlexGlobals.topLevelApplication.selectedModel.weight * Constants.PRICE_PER_GRAM_IN_DOLLARS * Constants.DOLLAR_EURO).toPrecision(2);
+				if (source.length > 0)
+				{
+					averageQA=averageQA / source.length;
+					averageTime=averageTime / source.length;
+					averageWinTime=averageWinTime / wins;
+					uniqueCost=(totalWeight / wins * Constants.PRICE_PER_GRAM_IN_DOLLARS * Constants.DOLLAR_EURO).toPrecision(2);
+					uniqueWeight=int(totalWeight / wins).toString();
+				}
+				else
+				{
+					averageQA=0;
+					averageTime=0;
+				}
+				if (source.length > 0)
+				{
+					titleLabel.text=fails + " fails / " + source.length + " impressions. " + wins + " en stock.";
+					titleLabel2.text="Poids Total: " + totalWeight + "g, " + failWeight + "g perdus, " + winWeight + "g utilisés." + "\nCout: " + uniqueCost + "€ " + " (contre " + originalCost + "€ au départ)" + ", materiaux: " + uniqueWeight + "g (contre " + FlexGlobals.topLevelApplication.selectedModel.weight + "g au départ)" + "\nTemps moyen d'impression (avec fails): " + Constants.timeFormat(averageWinTime) + " (" + Constants.timeFormat(averageTime) + " sans fail)" + " , qualité moyenne: " + averageQA + "%";
+				}
+				else
+				{
+					titleLabel.text="Aucune impression avec ce modele.";
+					titleLabel2.text="...pour le moment.";
+				}
+			}
+
+			private function handleServerEvent(event:ServerEvent):void
+			{
+				trace("\n===== server event catched: " + event.type + ", calling printLogsServices.getAllPrintLogsByModelID: " + modelID);
+				getAllPrintLogsByModelIDResult.token=printLogsServices.getAllPrintLogsByModelID(modelID);
+				setTimeout(function():void
+				{
+					getAllPrintLogsByModelIDResult.token=printLogsServices.getAllPrintLogsByModelID(modelID)
+				}, 1000);
+			}
+
+			private function handleSelectedModelChanged(event:InteractionEvent):void
+			{
+				modelID=FlexGlobals.topLevelApplication.selectedModel.idmodels;
+				getAllPrintLogsByModelIDResult.token=printLogsServices.getAllPrintLogsByModelID(modelID);
+				//printLogsServices.commit();
+			}
+
+
+
+
+			private function timeColumnLabelFunctionTime(item:Object, column:GridColumn):String
+			{
+				if (!item)
+					return "";
+				return Constants.timeFormat(item[column.dataField]);
+			}
+
+			private function timeColumnLabelFunctionDate(item:Object, column:GridColumn):String
+			{
+				if (!item)
+					return "";
+				return datatipformatter.format(item[column.dataField]);
+			}
+
+			private function pieSeries_fillFunc(item:ChartItem, index:Number):IFill
+			{
+				if (index == 0)
+				{
+					return new SolidColor(Constants.CHART_COLOR_RED);
+				}
+				else
+				{
+					return new SolidColor(Constants.CHART_COLOR_GREEN);
+				}
+			}
+
+			protected function getAllPrintLogsByModelIDResult_resultHandler(event:ResultEvent):void
+			{
+				trace("PRINT LOG SERVICES DONE: getAllPrintLogsByModelIDResult_resultHandler");
+				trace("event.result: " + event.result.length);
+				countFails(ArrayCollection(event.result));
+			}
+
+			protected function dataGrid_gridDoubleClickHandler(event:GridEvent):void
+			{
+				trace("selected: " + event.item);
+				var tmp:PrintImagesViewer=new PrintImagesViewer();
+				tmp.printlog=event.item;
+				PopUpManager.addPopUp(tmp, DisplayObject(FlexGlobals.topLevelApplication), false);
+				PopUpManager.centerPopUp(tmp);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:SeriesInterpolate id="seriesSlide"
+							  duration="1000"/>
+		<s:DateTimeFormatter id="datatipformatter"
+							 dateTimePattern="d MMMM yyyy HH:mm"
+							 locale="fr-FR"/>
+		<s:DateTimeFormatter id="axisformatter"
+							 dateTimePattern="dd MM / yyyy HH:mm"
+							 locale="fr-FR"/>
+		<!--<s:DateTimeFormatter id="timeformatter" dateTimePattern="HH heures mm min" locale="fr-FR" />-->
+		<printlogsservices:PrintLogsServices id="printLogsServices"
+											 fault="Alert.show(event.fault.faultString + '\n' + event.fault.faultDetail)"
+											 showBusyCursor="true"/>
+		<s:CallResponder id="getAllPrintLogsByModelIDResult"
+						 result="getAllPrintLogsByModelIDResult_resultHandler(event)"/>
+	</fx:Declarations>
+	<s:HGroup width="100%"
+			  verticalAlign="middle">
+		<mx:PieChart id="failChart"
+					 dataProvider="{failsWins}"
+					 width="80"
+					 height="80"
+					 filters="{null}"
+					 showDataTips="true">
+			<mx:series>
+				<mx:PieSeries id="pieSeries"
+							  displayName="qualité"
+							  filters="{null}"
+							  showDataEffect="seriesSlide"
+							  fillFunction="pieSeries_fillFunc"/>
+			</mx:series>
+		</mx:PieChart>
+		<s:VGroup width="100%"
+				  verticalAlign="middle"
+				  gap="6">
+			<s:Label id="titleLabel"
+					 fontSize="18"
+					 fontWeight="bold"
+					 text="Chargement..."
+					 width="100%"/>
+			<s:Label id="titleLabel2"
+					 fontSize="12"
+					 text="...en cours"
+					 width="100%"/>
+		</s:VGroup>
+		<mx:ToggleButtonBar dataProvider="mainView"
+							height="30"
+							paddingRight="50"
+							color="#424242"/>
+	</s:HGroup>
+	<mx:ViewStack id="mainView"
+				  width="100%"
+				  height="100%">
+		<s:NavigatorContent label="Stats"
+							width="100%"
+							height="100%"
+							backgroundColor="#999999">
+			<s:layout>
+				<s:VerticalLayout horizontalAlign="center"
+								  paddingBottom="10"
+								  paddingLeft="15"
+								  paddingRight="0"
+								  paddingTop="15"
+								  gap="7"/>
+			</s:layout>
+			<Components:QATimeLineChart id="lineChartQA"
+										dataProvider="{getAllPrintLogsByModelIDResult.lastResult}"/>
+			<mx:Legend dataProvider="{lineChartQA}"
+					   width="100%"
+					   direction="horizontal"/>
+		</s:NavigatorContent>
+		<s:NavigatorContent label="Logs"
+							width="100%"
+							height="100%"
+							backgroundAlpha="0"
+							color="#424242">
+			<s:VGroup width="100%"
+					  height="100%"
+					  paddingRight="20">
+				<s:DataGrid id="dataGrid"
+							width="100%"
+							height="100%"
+							doubleClickEnabled="true"
+							gridDoubleClick="dataGrid_gridDoubleClickHandler(event)"
+							dataProvider="{getAllPrintLogsByModelIDResult.lastResult}"
+							borderVisible="false"
+							sortableColumns="true"
+							textAlign="center">
+					<s:columns>
+						<s:ArrayList>
+							<s:GridColumn dataField="idprintLogs"
+										  sortDescending="true"
+										  width="35"
+										  headerText="#">
+							</s:GridColumn>
+							<s:GridColumn dataField="time"
+										  sortDescending="true"
+										  headerText="durée"
+										  width="80"
+										  labelFunction="timeColumnLabelFunctionTime">
+							</s:GridColumn>
+							<s:GridColumn dataField="date"
+										  headerText="date"
+										  width="200"
+										  labelFunction="timeColumnLabelFunctionDate">
+							</s:GridColumn>
+							<s:GridColumn dataField="QA"
+										  headerText="qualité (en %)">
+							</s:GridColumn>
+							<s:GridColumn dataField="completion"
+										  headerText="taux d'impression (en %)">
+							</s:GridColumn>
+							<s:GridColumn dataField="weight"
+										  headerText="poids imprimé (en g)">
+							</s:GridColumn>
+							<s:GridColumn dataField="encoding"
+										  width="50"
+										  headerText="video">
+							</s:GridColumn>
+						</s:ArrayList>
+					</s:columns>
+					<!--<s:AsyncListView list="{getAllPrintLogsByModelIDResult.lastResult}"/>-->
+				</s:DataGrid>
+			</s:VGroup>
+		</s:NavigatorContent>
+		<s:NavigatorContent label="Modele"
+							width="100%"
+							height="100%"
+							backgroundAlpha="0"
+							color="#424242">
+			<View:STLViewer width="100%"
+							height="100%"/>
+		</s:NavigatorContent>
+	</mx:ViewStack>
+</s:VGroup>

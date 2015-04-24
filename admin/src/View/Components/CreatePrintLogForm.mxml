@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:valueObjects="valueObjects.*"
+			   xmlns:modelsservice="services.modelsservice.*"
+			   xmlns:printlogsservices="services.printlogsservices.*"
+			   minWidth="320"
+			   minHeight="280"
+			   resize="titlewindow1_resizeHandler(event)"
+			   creationComplete="titlewindow1_creationCompleteHandler(event)"
+			   title="Nouvelle impression"
+			   title.fail="Fail - entrer le pourcentage imprimé"
+			   title.pause="En pause"
+			   title.running="Impression en cours..."
+			   title.stop="Impression terminée - choisir un résultat"
+			   title.success="Imprimé - entrer la qualité"
+			   xmlns:View="View.*"
+			   xmlns:Components="View.Components.*">
+	<fx:Script>
+		<![CDATA[
+			import Control.ServerEvent;
+			
+			import Model.Constants;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.ResizeEvent;
+			import mx.events.StateChangeEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.FaultEvent;
+			import mx.rpc.events.ResultEvent;
+			
+			import spark.events.TextOperationEvent;
+
+			[Bindable]
+			public var modelID:int;
+
+			[Bindable]
+			public var now:Date;
+
+			private var timer:Timer;
+
+			protected function closeMe(event:CloseEvent=null):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				seconds=0;
+				timer=new Timer(1000);
+				timer.addEventListener(TimerEvent.TIMER, handleTimer, false, 0, true);
+				printLogs.date=now;
+				printLogs.QA=80 //default
+				printLogs.completion=100 //default
+				addEventListener(StateChangeEvent.CURRENT_STATE_CHANGE, handleStateChanged, false, 0, true);
+			}
+
+			private function handleStateChanged(event:StateChangeEvent):void
+			{
+				PopUpManager.centerPopUp(this);
+			}
+
+			private var seconds:int=0;
+
+			private function handleTimer(event:TimerEvent):void
+			{
+				seconds++;
+				durationLabel.text=Constants.timeFormat(seconds);
+			}
+
+			private function always2chars(value:Number):String
+			{
+				if (value < 10)
+				{
+					return "0" + value;
+				}
+				return value.toString();
+			}
+
+			protected function startBtn_clickHandler(event:MouseEvent):void
+			{
+				now=new Date();
+				timer.start();
+				this.currentState="running";
+			}
+
+			protected function pauseBtn_clickHandler(event:MouseEvent):void
+			{
+				timer.stop();
+				this.currentState="pause";
+			}
+
+			protected function stopBtn_clickHandler(event:MouseEvent):void
+			{
+				timer.stop();
+				timer.reset();
+				this.currentState="stop";
+			}
+
+			protected function doneBtn_clickHandler(event:MouseEvent):void
+			{
+				//savePrintBtnHandler(event);
+				var printLogs2:PrintLogs=new PrintLogs();
+				printLogs2.models_idmodels=FlexGlobals.topLevelApplication.selectedModel.idmodels;
+				printLogs2.QA=printLogs.QA;
+				printLogs2.completion=printLogs.completion;
+				printLogs2.weight=FlexGlobals.topLevelApplication.selectedModel.weight * printLogs.completion / 100;
+				printLogs2.time=seconds;
+				printLogs2.date=now;
+				createPrintLogsResult.token=printLogsServices.createPrintLogs(printLogs2);
+				printLogsServices.commit();
+			}
+
+			protected function resumeBtn_clickHandler(event:MouseEvent):void
+			{
+				timer.start();
+				this.currentState="running";
+			}
+
+			protected function completionTI_changeHandler(event:TextOperationEvent):void
+			{
+				QAslider.value=int(event.target.text);
+				setQACompletion(int(event.target.text));
+			}
+
+			protected function QAslider_changeHandler(event:Event):void
+			{
+				completionTI.text=event.target.value;
+				setQACompletion(event.target.value);
+			}
+
+			private function setQACompletion(value:int):void
+			{
+				if (this.currentState == "success")
+				{
+					printLogs.QA=int(value);
+					printLogs.completion=100;
+				}
+				else
+				{
+					printLogs.QA=0;
+					printLogs.completion=int(value);
+				}
+			}
+
+			protected function titlewindow1_resizeHandler(event:ResizeEvent):void
+			{
+				PopUpManager.centerPopUp(this);
+			}
+
+			protected function createPrintLogsResult_resultHandler(event:ResultEvent):void
+			{
+				//trace("result: "+event.message);
+				createPrintLogWebcamView.close();
+				dispatchEvent(new ServerEvent(ServerEvent.REFRESH_PRINTLOGS, true, true, new Dictionary()));
+				FlexGlobals.topLevelApplication.peerToPeer.sendMessage(Constants.P2P_PRINT_STOPPED_MSG);
+				closeMe();
+			}
+
+			protected function printLogsServices_faultHandler(event:FaultEvent):void
+			{
+				Alert.show("event: " + event);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<valueObjects:PrintLogs id="printLogs"/>
+		<printlogsservices:PrintLogsServices id="printLogsServices"
+											 fault="printLogsServices_faultHandler(event)"
+											 showBusyCursor="true"/>
+		<s:CallResponder id="createPrintLogsResult"
+						 result="createPrintLogsResult_resultHandler(event)"/>
+	</fx:Declarations>
+	<s:states>
+		<s:State name="start"/>
+		<s:State name="running"/>
+		<s:State name="pause"/>
+		<s:State name="stop"/>
+		<s:State name="fail"/>
+		<s:State name="success"/>
+	</s:states>
+	<s:layout>
+		<s:VerticalLayout paddingBottom="20"
+						  paddingLeft="20"
+						  paddingRight="20"
+						  paddingTop="20"
+						  gap="30"
+						  gap.running="10"
+						  verticalAlign="middle"
+						  horizontalAlign="center"/>
+	</s:layout>
+	<s:Button id="startBtn"
+			  label="Demarrer"
+			  height="50"
+			  width="100%"
+			  includeIn="start"
+			  click="startBtn_clickHandler(event)"/>
+	<s:HGroup width="100%"
+			  verticalAlign="middle"
+			  gap="15">
+		<s:Label id="durationLabel"
+				 fontSize="48"
+				 text="00:00:00"
+				 includeIn="running"
+				 color="#767676"/>
+		<s:Label id="statusLabel"
+				 fontSize="12"
+				 width="100%"
+				 includeIn="running"
+				 color="#BBBBBB"/>
+		<!--<s:Button id="pauseBtn"
+				  label="Pause"
+				  includeIn="running"
+				  click="pauseBtn_clickHandler(event)"/>-->
+		<s:Button id="stopBtn"
+				  label="Stop"
+				  height="30"
+				  includeIn="running"
+				  click="stopBtn_clickHandler(event)"/>
+	</s:HGroup>
+	<Components:CreatePrintLogWebcam id="createPrintLogWebcamView"
+									 includeIn="running"
+									 printlogform="{this}"
+									 width="{Constants.VIDEOIN_WIDTH}"
+									 height="{Constants.VIDEOIN_HEIGHT}"/>
+
+	<s:Button id="resumeBtn"
+			  label="redémarrer"
+			  height="80"
+			  width="100%"
+			  includeIn="pause"
+			  click="resumeBtn_clickHandler(event)"/>
+	<s:VGroup includeIn="fail,stop,success"
+			  width="100%"
+			  height="100%"
+			  gap="20"
+			  horizontalAlign="center"
+			  paddingLeft="0"
+			  paddingRight="0"
+			  verticalAlign.stop="middle">
+		<s:Button id="completeBtn"
+				  includeIn="stop"
+				  width="100%"
+				  height="60"
+				  label="Imprimé"
+				  click="{this.currentState = 'success'}"/>
+		<s:Button id="failBtn"
+				  includeIn="stop"
+				  width="100%"
+				  height="60"
+				  label="Fail"
+				  click="{this.currentState = 'fail'}"/>
+		<s:TextInput id="completionTI"
+					 includeIn="fail,success"
+					 width="150"
+					 fontSize="64"
+					 prompt="XX"
+					 text="50"
+					 text.success="80"
+					 change="completionTI_changeHandler(event)"
+					 textAlign="center"/>
+		<s:HSlider id="QAslider"
+				   includeIn="fail,success"
+				   change="QAslider_changeHandler(event)"
+				   width="100%"
+				   maximum="100"
+				   minimum="0"
+				   value="50"
+				   value.success="80"/>
+		<s:Button id="doneBtn"
+				  includeIn="fail,success"
+				  width="100%"
+				  height="50"
+				  label="OK"
+				  click="doneBtn_clickHandler(event)"/>
+	</s:VGroup>
+</s:TitleWindow>

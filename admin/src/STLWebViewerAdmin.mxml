@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Application xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:modelsservice="services.modelsservice.*"
+			   xmlns:valueObjects="valueObjects.*"
+			   xmlns:View="View.*"
+			   xmlns:uploada="services.uploada.*"
+			   xmlns:printlogsservice="services.printlogsservice.*"
+			   xmlns:modelsservices="services.modelsservices.*"
+			   xmlns:printedmodelsservice="services.printedmodelsservice.*"
+			   width="100%"
+			   height="100%"
+			   backgroundAlpha="0"
+			   backgroundColor="#999999"
+			   layout="{appLayout}"
+			   creationComplete="application1_creationCompleteHandler(event)"
+			   initialize="application1_initializeHandler(event)" xmlns:Control="Control.*">
+	<fx:Script>
+		<![CDATA[
+			import Control.InteractionEvent;
+			import Control.PeerToPeerEvent;
+			import Control.ServerEvent;
+			
+			import Model.Constants;
+			
+			import View.Components.CreateModelForm;
+			import View.Components.CreatePrintLogForm;
+			import View.PrinterView;
+			import View.UpdateLoginForm;
+			
+			import flash.net.navigateToURL;
+			
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.events.IndexChangedEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+			
+			private var _titleLabelResume:String;
+			
+			public function get titleLabelResume():String
+			{
+				return _titleLabelResume;
+			}
+
+			public function set titleLabelResume(value:String):void
+			{
+				_titleLabelResume = value;
+				titleLabel.text = value;
+			}
+
+			protected function application1_creationCompleteHandler(event:FlexEvent):void
+			{
+				systemManager.addEventListener(ServerEvent.REFRESH_MODELS, handleServerEvent, true, 0, true);
+				systemManager.addEventListener(PeerToPeerEvent.STREAM_RECEIVED, handleBroadcastReceived, true, 0, false);
+				getAll3DModelsResult.token=printedModelsService.getAll3DModels();
+				peerToPeer.connectCirus();
+				trace("app creation complete");
+			}
+			
+			protected function handleBroadcastReceived(event:PeerToPeerEvent):void
+			{
+				var broadcastWindow:PrinterView = new PrinterView();
+				PopUpManager.addPopUp(broadcastWindow, this);
+				PopUpManager.centerPopUp(broadcastWindow);
+			}
+
+			protected function application1_initializeHandler(event:FlexEvent):void
+			{
+				//debug swf cant be deployed?
+
+				//if UNcommented, prevents file selection.
+
+				//About security error when debugging:
+
+				/*  Thanks all for your attention, i have solved my problem and i think its a bug in the flash builder ,
+				the problem was that when you compile the application and you enabling Network Monitoring ,
+				the communication of the AMF channels done throw the  http://localhost:37813/flex2gateway/
+				and that was the problem if you close the flash builder on your system that getaway dose not exist and on the
+				hosted server there is no such address localhost by this port also so the client application
+				witch is catch in you system try to access your localhost and that cause a security error and the address is also not exist .
+				so the solution or we have to compile the project after we disable the Network Monitoring in flash builder .*/
+				
+				//Security.allowDomain is defo not required!!
+				/* Security.loadPolicyFile("www.st-f.net/crossdomain.xml");
+				Security.allowDomain("www.st-f.net"); */
+			}
+
+			private function handleServerEvent(event:ServerEvent):void
+			{
+				getAll3DModelsResult.token=printedModelsService.getAll3DModels();
+			}
+
+			protected function mainView_changeHandler(event:IndexChangedEvent):void
+			{
+				var param:Dictionary=new Dictionary();
+				param.start=false;
+				dispatchEvent(new InteractionEvent(InteractionEvent.START_STOP, true, true, param));
+				trace("mainView changed: " + event.newIndex)
+				if (event.newIndex == 1)
+				{
+					param.start=true;
+					dispatchEvent(new InteractionEvent(InteractionEvent.START_STOP, true, true, param));
+					updateTitleLabel();
+					/*if(detailView)
+					{
+						detailView.type3DModels = getAll3DModelsResult.lastResult[list.selectedIndex];
+					}*/
+						//if(detailView) detailView.stlviewer.scene.loadFile(MODELSURL+getAll3DModelsResult.lastResult[list.selectedIndex].STLfile);
+				}
+				else if (event.newIndex == 0)
+				{
+					param.start=false;
+					dispatchEvent(new InteractionEvent(InteractionEvent.START_STOP, true, true, param));
+					list.selectedIndex=-1;
+					titleLabel.text=_titleLabelResume;
+					detailsView.enabled=false;
+				}
+			}
+
+			private function updateTitleLabel():void
+			{
+				titleLabel.text="#" + selectedModel.idmodels + " " + selectedModel.name + ' (' + selectedModel.STLfile + ')';
+			}
+
+			protected function addModelBtn_clickHandler(event:MouseEvent):void
+			{
+				var tmp:CreateModelForm=new CreateModelForm();
+				PopUpManager.addPopUp(tmp, this, true);
+				PopUpManager.centerPopUp(tmp);
+			}
+
+			protected function list_creationCompleteHandler(event:FlexEvent):void
+			{
+				getAll3DModelsResult.token=printedModelsService.getAll3DModels();
+			}
+
+			protected function listChangeHandler(event:Event):void
+			{
+				selectedModel=getAll3DModelsResult.lastResult[list.selectedIndex];
+				if (!selectedModel)
+					return;
+				updateTitleLabel();
+				var params:Dictionary=new Dictionary();
+				params.model=selectedModel;
+				dispatchEvent(new InteractionEvent(InteractionEvent.SELECTED_MODEL_CHANGED, true, true, params));
+				mainView.selectedIndex=1;
+				detailsView.enabled=true;
+			}
+
+			protected function getSelectedIds():Array
+			{
+				var ret:Array=[];
+				for (var index:int=0; index < list.selectedItems.length; index++)
+				{
+					ret.push(list.selectedItems[index].idmodels);
+				}
+				return ret;
+			}
+
+			protected var serviceCommited:Boolean=false;
+
+			protected function deleteModels_clickHandler(event:MouseEvent):void
+			{
+				Alert.show("Supprimer ce modele, les logs d'impressions et les ventes associees? ", "Sur de chez sur?", 3, this, confirmDeletion)
+			}
+
+			public function confirmDeletion(event:CloseEvent):void
+			{
+				if (event.detail == Alert.YES)
+				{
+					serviceCommited=false;
+					var items:Array=getSelectedIds();
+					for (var index:int=0; index < items.length; index++)
+					{
+						delete3DModels(items[index]);
+					}
+				}
+			}
+
+			protected function delete3DModels(itemID:int):void
+			{
+				delete3DModelsResult.token=printedModelsService.delete3DModels(itemID);
+				if (!serviceCommited)
+				{
+					printedModelsService.commit();
+					serviceCommited=true;
+				}
+			}
+
+			protected function get3DModelsByID(itemID:int):void
+			{
+				get3DModelsByIDResult.token=printedModelsService.get3DModelsByID(itemID);
+			}
+
+
+			protected function newPrintLogBtn_clickHandler(event:MouseEvent):void
+			{
+				var tmp:CreatePrintLogForm=new CreatePrintLogForm();
+				//tmp.closeButton.visible = false;
+				tmp.modelID=selectedModel.idmodels;
+				PopUpManager.addPopUp(tmp, this, true);
+				PopUpManager.centerPopUp(tmp);
+			}
+
+			protected function list_doubleClickHandler(event:MouseEvent):void
+			{
+				var tmp:UpdateLoginForm=new UpdateLoginForm();
+				PopUpManager.addPopUp(tmp, this, true);
+				PopUpManager.centerPopUp(tmp);
+			}
+
+			protected function delete3DModelsResult_resultHandler(event:ResultEvent):void
+			{
+				dispatchEvent(new ServerEvent(ServerEvent.REFRESH_MODELS, true, false, null));
+				list.selectedIndex=-1;
+			}
+
+			protected function downloadBtn_clickHandler(event:MouseEvent):void
+			{
+				var urlReq:URLRequest=new URLRequest(Constants.MODELSURL + selectedModel.STLfile);
+				navigateToURL(urlReq, "_blank");
+			}
+		]]>
+	</fx:Script>
+	<fx:Style source="styles.css"/>
+	<fx:Declarations>
+		<s:DateTimeFormatter id="datatipformatter" dateTimePattern="EEEE d MMMM yyyy" locale="fr-FR" />
+		<s:HorizontalLayout id="appLayout"
+							paddingBottom="20"
+							paddingLeft="20"
+							paddingRight="0"
+							paddingTop="20"
+							gap="20"
+							horizontalAlign="center"/>
+		<Control:PeerToPeer id="peerToPeer" />
+		<printedmodelsservice:PrintedModelsService id="printedModelsService"
+												   fault="Alert.show(event.fault.faultString + '\n' + event.fault.faultDetail)"
+												   showBusyCursor="true"/>
+		<s:CallResponder id="getAll3DModelsResult"/>
+		<s:CallResponder id="delete3DModelsResult"
+						 result="delete3DModelsResult_resultHandler(event)"/>
+		<s:CallResponder id="get3DModelsByIDResult"/>
+		<valueObjects:Type3DModels id="selectedModel"/>
+		<s:DropShadowFilter id="listDropShadow"
+							inner="true"
+							alpha="0.8"
+							blurX="15"
+							blurY="15"
+							strength=".8"
+							distance="0"/>
+	</fx:Declarations>
+	<s:VGroup width="300"
+			  height="100%"
+			  horizontalAlign="center"
+			  gap="20">
+		<s:Label text="{datatipformatter.format(new Date())}"
+				 fontSize="12"
+				 color="#CCCCCC"/>
+		<mx:ToggleButtonBar id="mainBtnBar"
+							width="200"
+							height="25"
+							dataProvider="{mainView}"
+							disabledColor="#666666"/>
+		<s:Group width="100%"
+				 height="100%">
+			<s:List id="list"
+					allowMultipleSelection="true"
+					width="100%"
+					height="100%"
+					contentBackgroundColor="#777777"
+					color="#DDDDDD"
+					filters="{[listDropShadow]}"
+					doubleClickEnabled="true"
+					fontSize="12"
+					change="listChangeHandler(event)"
+					doubleClick="list_doubleClickHandler(event)"
+					itemRenderer="View.Components.ModelListItemRender">
+				<s:AsyncListView list="{getAll3DModelsResult.lastResult}"/>
+			</s:List>
+		</s:Group>
+		<s:HGroup width="100%"
+				  height="30">
+			<s:Button id="addModelBtn"
+					  label="Ajouter"
+					  width="100%"
+					  height="100%"
+					  click="addModelBtn_clickHandler(event)"/>
+			<s:Button id="deleteModels"
+					  label="Supprimer"
+					  click="deleteModels_clickHandler(event)"
+					  width="100%"
+					  height="100%"/>
+		</s:HGroup>
+		<s:Label text="{Constants.GATEWAY_URL}"
+				 fontSize="10"
+				 color="#FFFFFF"/>
+	</s:VGroup>
+	<s:VGroup width="100%"
+			  height="100%"
+			  gap="20">
+		<s:HGroup width="100%"
+				  verticalAlign="middle"
+				  gap="15"
+				  paddingRight="20">
+			<s:Label id="titleLabel"
+					 paddingLeft="25"
+					 textAlign="left"
+					 paddingTop="3" paddingRight="15"
+					 fontSize="18" fontWeight="normal"
+					 text="Chargement..."
+					 color="#FFFFFF"
+					 width="100%"/>
+			<s:Button label="Imprimer"
+					  height="35"
+					  click="newPrintLogBtn_clickHandler(event)"
+					  visible="{list.selectedIndex!=-1}"/>
+			<s:Button id="downloadBtn"
+					  label="Télécharger"
+					  height="35"
+					  click="downloadBtn_clickHandler(event)"
+					  visible="{list.selectedIndex!=-1}"/>
+		</s:HGroup>
+		<mx:ViewStack id="mainView"
+					  width="100%"
+					  height="100%"
+					  backgroundAlpha="0"
+					  change="mainView_changeHandler(event)"
+					  creationPolicy="auto">
+			<s:NavigatorContent label="RÉSUMÉ">
+				<View:StatsView width="100%"
+								height="100%"/>
+			</s:NavigatorContent>
+			<s:NavigatorContent id="detailsView"
+								label="IMPRESSIONS"
+								enabled="false"
+								backgroundAlpha="0">
+				<View:PrintLogsView visible="{list.selectedIndex != -1}"/>
+			</s:NavigatorContent>
+		</mx:ViewStack>
+	</s:VGroup>
+</s:Application>

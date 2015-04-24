@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:AreaChart xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			  xmlns:s="library://ns.adobe.com/flex/spark" 
+			  xmlns:mx="library://ns.adobe.com/flex/mx"
+			  width="100%" height="100%" dataTipFunction="weightChartDataTipFunction" showDataTips="true" xmlns:View="View.*">
+	<fx:Script>
+		<![CDATA[
+			import mx.charts.HitData;
+			
+			import Model.Constants;
+			
+			import valueObjects.PrintLogs;
+			
+			private function timeChartDataTipFunction(item:HitData):String 
+			{
+				if(!item.item) return "";
+				var formatted:String = datatipformatter.format(item.item.date);
+				return "<b>" + formatted + "</b><br />" + item.item.time + " <i>secondes</i>";
+			}			
+			
+			private function weightChartDataTipFunction(item:HitData):String 
+			{
+				if(!item.item) return "";
+				var formatted:String = datatipformatter.format(item.item.date);
+				return "<b>" + formatted + "</b><br />" + item.item.weight + " <i>%</i>";
+			}
+			
+			public function defineLabel(
+				cat:Object, 
+				pcat:Object,
+				ax:CategoryAxis,
+				labelItem:Object):String 
+			{
+				return axisformatter.format(cat);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:SeriesInterpolate id="seriesSlide" duration="1000" />
+		<s:DateTimeFormatter id="datatipformatter" dateTimePattern="d MMMM yyyy HH:mm" locale="fr-FR" />
+		<s:DateTimeFormatter id="axisformatter" dateTimePattern="dd MM / yyyy HH:mm" locale="fr-FR" />
+		<mx:Stroke id="greenStroke" 
+				   color="{Constants.CHART_COLOR_GREEN}" 
+				   weight="8" 
+				   alpha=".75"
+				   caps="square"
+				   />
+		<mx:Stroke id="redStroke" 
+				   color="{Constants.CHART_COLOR_RED}" 
+				   weight="8" 
+				   alpha=".75"
+				   caps="square"
+				   />
+		<mx:Stroke id="blueStroke" 
+				   color="{Constants.CHART_COLOR_BLUE}" 
+				   weight="8" 
+				   alpha=".75"
+				   caps="square"
+				   />
+	</fx:Declarations>
+	<mx:horizontalAxisRenderers>
+		<mx:AxisRenderer axis="{categoryAxis}" canDropLabels="true"/>
+	</mx:horizontalAxisRenderers>
+	<mx:horizontalAxis>
+		<mx:CategoryAxis id="categoryAxis" categoryField="date" labelFunction="defineLabel"/>
+	</mx:horizontalAxis>
+	<mx:series>
+		<mx:AreaSeries id="lineSeries2" yField="weight" form="curve">
+			
+			<mx:areaFill>
+				<s:SolidColor color="{Constants.CHART_COLOR_GREEN}" />
+				<!--<mx:LinearGradient angle="-90">
+				<mx:entries>
+				<mx:GradientEntry 
+				color="0xFF0000"
+				ratio="0.8"
+				alpha="1"
+				/>
+				<mx:GradientEntry 
+				color="0x00FF00"
+				ratio="0.2"
+				/>
+				</mx:entries>
+				</mx:LinearGradient>-->
+			</mx:areaFill>
+		</mx:AreaSeries>
+	</mx:series>
+</mx:AreaChart>

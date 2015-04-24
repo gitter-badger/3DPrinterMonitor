@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 width="100%"
+		 height="100%"
+		 xmlns:containers="away3d.containers.*"
+		 xmlns:cameras="away3d.cameras.*"
+		 xmlns:debug="away3d.debug.*"
+		 creationComplete="creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import Control.InteractionEvent;
+			
+			import away3d.cameras.Camera3D;
+			import away3d.containers.ObjectContainer3D;
+			import away3d.containers.Scene3D;
+			import away3d.containers.View3D;
+			import away3d.controllers.HoverController;
+			import away3d.core.base.Geometry;
+			import away3d.core.base.SubGeometry;
+			import away3d.core.math.Plane3D;
+			import away3d.debug.AwayStats;
+			import away3d.debug.Trident;
+			import away3d.debug.WireframeAxesGrid;
+			import away3d.entities.Mesh;
+			import away3d.lights.PointLight;
+			import away3d.materials.ColorMaterial;
+			import away3d.materials.TextureMaterial;
+			import away3d.materials.lightpickers.StaticLightPicker;
+			import away3d.materials.methods.CelDiffuseMethod;
+			import away3d.materials.methods.CelSpecularMethod;
+			import away3d.materials.methods.OutlineMethod;
+			import away3d.primitives.CubeGeometry;
+			import away3d.primitives.PlaneGeometry;
+			import away3d.primitives.WireframePlane;
+			import away3d.textures.Texture2DBase;
+			
+			import com.pranavh.as3d.stl.STLReader;
+			import com.pranavh.as3d.stl.framework.Solid;
+			
+			import mx.events.FlexEvent;
+
+			private var scene:Scene3D;
+			private var camera:Camera3D;
+			public var view:View3D;
+			private var awayStats:AwayStats;
+			/* private var axes:WireframeAxesGrid;
+			private var axes2:WireframeGrid;
+			private var axes3:WireframeGrid; */
+
+			//engine variables
+			private var cameraController:HoverController;
+			private var displayMesh:Mesh;
+			private var displayObjContainer:ObjectContainer3D;
+
+			//light objects
+			private var pointLight:PointLight;
+			private var pointLight2:PointLight;
+			private var lightPicker:StaticLightPicker;
+
+			//navigation variables
+			//private var move:Boolean=false;
+			private var lastPanAngle:Number;
+			private var lastTiltAngle:Number;
+			private var lastMouseX:Number;
+			private var lastMouseY:Number;
+
+			//Reader objects
+			private var reader:STLReader;
+			private var f:FileReference;
+			private var filter:Array;
+
+			private var tiltIncrement:Number=0;
+			private var panIncrement:Number=0;
+			private var distanceIncrement:Number=0;
+			public const tiltSpeed:Number=2;
+			public const panSpeed:Number=2;
+			public const distanceSpeed:Number=2;
+
+			private var zoom:Number=0;
+			private var rotateX:Number=-1;
+			private var rotateY:Number=-1;
+			private var rotateZ:Number=-1;
+			
+			private var colorMaterial:ColorMaterial;
+
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				initSTLViewer();
+				systemManager.addEventListener(InteractionEvent.BROWSE, browse, true);
+			//	systemManager.addEventListener(InteractionEvent.ZOOM, handleZoomEvent, true);
+				systemManager.addEventListener(InteractionEvent.ROTATE, handleRotationEvent, true);
+			}
+
+			public function initSTLViewer():void
+			{
+				initScene();
+				initFile();
+				initListeners();
+			}
+
+			private function initListeners():void
+			{
+				onResize();
+				view.addEventListener(MouseEvent.MOUSE_WHEEL, handleMouseWheel, false, 0, true);
+				view.addEventListener(MouseEvent.MOUSE_DOWN, onMouseDown, false, 0, true);
+				view.addEventListener(MouseEvent.MOUSE_UP, onMouseUp, false, 0, true);
+				view.addEventListener(MouseEvent.DOUBLE_CLICK, onMouseDoubleClick, false, 0, true);
+				addEventListener(Event.RESIZE, onResize, false, 0, true);
+				//view.addEventListener(KeyboardEvent.KEY_UP, onKeyUp, false, 0, true);
+				addEventListener(Event.ENTER_FRAME, onEnterFrame, false, 0, true);
+			}
+			
+			[Bindable]
+			public var renderEnabled:Boolean=true;
+
+			public function removeListeners():void
+			{
+			}
+
+			private function browse(e:InteractionEvent):void
+			{
+				f.addEventListener(Event.SELECT, fSelected);
+				f.browse(filter);
+			}
+
+			private function fSelected(e:Event):void
+			{
+				f.removeEventListener(Event.SELECT, fSelected);
+				f.addEventListener(ProgressEvent.PROGRESS, handleLoadProgress);
+				f.addEventListener(Event.COMPLETE, localFileLoaded);
+				f.load();
+			}
+
+			private function handleLoadProgress(event:ProgressEvent):void
+			{
+				trace("progress: "+int(event.bytesLoaded / event.bytesTotal * 100));
+			}
+
+			private function initFile():void
+			{
+				f=new FileReference();
+				var l:FileFilter=new FileFilter("StereoLithography Files (*.stl)", "*.stl");
+				filter=[l];
+				//loadFile();
+			}
+
+			public function loadFile(url:String):void
+			{
+				var urlloader:URLLoader=new URLLoader();
+				urlloader.dataFormat=URLLoaderDataFormat.BINARY;
+				urlloader.addEventListener(Event.COMPLETE, urlLoaded, false, 0, true);
+				urlloader.load(new URLRequest(url));
+			}
+
+			private function urlLoaded(e:Event):void
+			{
+				f.removeEventListener(Event.COMPLETE, urlLoaded);
+				reader=new STLReader();
+				reader.parse(e.target.data);
+				initObject();
+			}
+
+			private function localFileLoaded(e:Event):void
+			{
+				f.removeEventListener(Event.COMPLETE, localFileLoaded);
+				reader=new STLReader();
+				reader.parse(f.data);
+				initObject();
+			}
+			
+			private var primitive2:WireframePlane;
+
+			private function initScene():void
+			{
+				view=new View3D();
+				view.backgroundColor = 0x999999;
+				//view.antiAlias=4;
+				view.antiAlias=5;
+				view.forceMouseMove=true;
+				scene=view.scene;
+				camera=view.camera;
+				
+				//camera.lens = new OrthographicLens();
+				
+				container.addChild(view);
+				view.width=container.width;
+				view.height=container.height;
+				
+				cameraController=new HoverController(camera, null, 45, 30, 800,-360,360,-360,360);
+				
+				/* var axes3:WireframePlane=new WireframePlane(2000, 2000, 20, 20, 0xDDDDDD, 0.5, WireframePlane.ORIENTATION_XZ);
+				scene.addChild(axes3); */
+				var plane:PlaneGeometry=new PlaneGeometry(2000,2000);
+				var planeMesh:Mesh=new Mesh(plane, new ColorMaterial(0x222222, .3));
+				
+				// show statistics
+				awayStats=new AwayStats(view);
+				container.addChild(awayStats);
+				awayStats.x=container.width - awayStats.width;
+
+				//create a light for the camera
+				pointLight=new PointLight();
+				pointLight.diffuse = 1200;
+				scene.addChild(pointLight);
+				pointLight2=new PointLight();
+				pointLight2.diffuse = 1200;
+				scene.addChild(pointLight2);
+				// In version 4, you'll need a lightpicker. Materials must then be registered with it (see initObject)
+				lightPicker = new StaticLightPicker([pointLight, pointLight2]);
+				pointLight.position = camera.position;
+				pointLight.x = -2500;
+				pointLight.y = 2500;
+				pointLight2.position = camera.position;
+				pointLight2.x = -1500;
+				pointLight2.y = 1500;
+			}
+			
+			private var solid:Solid;
+			private var subGeom:SubGeometry;
+			private var geometry:Geometry;
+
+			private function initObject():void
+			{
+				if (displayObjContainer && displayObjContainer.contains(displayMesh))
+					displayObjContainer.removeChild(displayMesh);
+				if (displayObjContainer && scene.contains(displayObjContainer))
+					scene.removeChild(displayObjContainer);
+
+				solid=reader.data;
+				subGeom=new SubGeometry();
+				subGeom.updateVertexData(solid.vertices);
+				subGeom.updateIndexData(solid.indices);
+				geometry=new Geometry();
+				geometry.addSubGeometry(subGeom);
+				
+				colorMaterial = new ColorMaterial(0xEEEEEE, 1);
+				//material.ambientColor = 0xFFFFFF; //0xdd5525;
+				//material.specular = .05;
+				colorMaterial.diffuseMethod = new CelDiffuseMethod();
+				colorMaterial.specularMethod = new CelSpecularMethod(32);
+				colorMaterial.addMethod(new OutlineMethod(0x111111, 0.1, true, true));
+				colorMaterial.lightPicker = lightPicker;
+				//CelSpecularMethod(material.specularMethod).smoothness = .2;
+				
+				displayMesh=new Mesh(geometry, colorMaterial);			
+				displayMesh.showBounds=true;
+				displayMesh.scale(10);				
+				
+				displayObjContainer = new ObjectContainer3D();
+				displayObjContainer.addChild(displayMesh);
+				
+				displayMesh.pivotPoint= new Vector3D(0,0,(displayMesh.maxZ-displayMesh.minZ)/2);
+				displayObjContainer.rotateTo(-90, 0, 0);
+				scene.addChild(displayObjContainer);
+			}
+			
+			private var wireBitmap:BitmapData;
+			private var textureBase:Texture2DBase;
+			private var sphereMaterial:TextureMaterial;
+			private var hastomove:Boolean=false;
+
+			private function onEnterFrame(event:Event):void
+			{
+				if (displayObjContainer)
+				{
+					if (rotateX != -1)
+						displayObjContainer.rotationX+=rotateX;
+						//displayObjContainer.pitch(rotateX);
+					if (rotateY != -1)
+					{
+						displayObjContainer.rotationY+=rotateY;
+						//displayObjContainer.roll(rotateZ);
+					}
+					if (rotateZ != -1)
+						displayObjContainer.rotationZ+=rotateZ;
+						//displayObjContainer.yaw(rotateY);
+					if (renderEnabled)
+					{
+						if (hastomove)
+						{
+							cameraController.panAngle=0.3 * (stage.mouseX - lastMouseX) + lastPanAngle;
+							cameraController.tiltAngle=0.3 * (stage.mouseY - lastMouseY) + lastTiltAngle;
+						}
+						cameraController.panAngle+=panIncrement;
+						cameraController.tiltAngle+=tiltIncrement;
+						cameraController.distance+=distanceIncrement;
+						view.render();
+					}
+				}
+			}
+
+			
+			
+			
+			private function onMouseDoubleClick(event:MouseEvent):void
+			{
+				toggleFullscreen();
+			}
+
+			
+			private function toggleFullscreen():void
+			{
+				trace(stage.displayState);
+				if (stage.displayState != StageDisplayState.FULL_SCREEN)
+				{
+					stage.displayState=StageDisplayState.FULL_SCREEN;
+				}
+				else
+				{
+					stage.displayState=StageDisplayState.NORMAL;
+				}
+				onResize();
+			}
+			
+			private function onKeyUp(event:KeyboardEvent):void
+			{
+				trace("key : "+event.keyCode);
+				switch (event.keyCode)
+				{
+					case Keyboard.F:
+						toggleFullscreen();
+						break;
+				}			
+			}
+			
+			private function onMouseDown(event:MouseEvent):void
+			{
+				hastomove=true;
+				lastPanAngle=cameraController.panAngle;
+				lastTiltAngle=cameraController.tiltAngle;
+				lastMouseX=stage.mouseX;
+				lastMouseY=stage.mouseY;
+				//stage.addEventListener(Event.MOUSE_LEAVE, onStageMouseLeave);
+			}
+			
+			private function onMouseUp(event:MouseEvent):void
+			{
+				hastomove=false;
+				//stage.removeEventListener(Event.MOUSE_LEAVE, onStageMouseLeave);
+			}
+			
+			private function handleMouseWheel(event:MouseEvent):void
+			{
+				cameraController.distance-=event.delta;
+			}
+
+			private function handleRotationEvent(event:InteractionEvent):void
+			{
+				switch (event.param.way)
+				{
+					case "x":
+					{
+						rotateX=event.param.level;
+						break;
+					}
+					case "rotationX":
+					{
+						rotateX=0;
+						displayObjContainer.rotationX+=event.param.level;						
+						break;
+					}
+					case "y":
+					{
+						rotateY=event.param.level;
+						break;
+					}
+					case "rotationY":
+					{
+						rotateY=0;
+						displayObjContainer.rotationY+=event.param.level;						
+						break;
+					}
+					case "z":
+					{
+						rotateZ=event.param.level;
+						break;
+					}
+					case "rotationZ":
+					{
+						rotateZ=0;
+						displayObjContainer.rotationZ+=event.param.level;						
+						break;
+					}
+					case "reset":
+					{
+						//rotateX = rotateY = rotateZ = 0;
+						displayObjContainer.rotationX = -90;
+						displayObjContainer.rotationY = displayObjContainer.rotationZ = 0;
+						break;
+					}
+					default:
+					{
+						break;
+					}
+				}
+			}
+
+			/* private function handleZoomEvent(event:InteractionEvent):void
+			{
+				if (event.param.axis == "x")
+				{
+					if (event.param.level > 0)
+					{
+						camera.moveForward(event.param.level);
+					}
+					else
+					{
+						camera.moveBackward(Math.abs(event.param.level));
+					}
+				}
+				else if (event.param.axis == "y")
+				{
+					if (event.param.level > 0)
+					{
+						camera.moveUp(event.param.level);
+					}
+					else
+					{
+						camera.moveDown(Math.abs(event.param.level));
+					}
+				}
+				//camera.y = event.param.level;
+				trace("camera: "+camera.position+" displayMesh: "+displayMesh.maxX+", "+displayMesh.maxY+", "+displayMesh.maxZ);
+			} */
+
+			private function onResize(event:Event=null):void
+			{
+				view.width=container.width;
+				view.height=container.height;
+				trace("view.height: "+view.height+" container.height: "+container.height);
+				//awayStats.x=container.width - awayStats.width;
+				//awayStats.y=container.height - awayStats.height;
+			}
+		]]>
+	</fx:Script>
+	<mx:UIComponent id="container"
+						width="100%"
+						height="100%"/>
+</s:Group>

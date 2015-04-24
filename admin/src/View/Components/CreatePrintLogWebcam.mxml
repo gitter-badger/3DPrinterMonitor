@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 creationComplete="creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import Control.InteractionEvent;
+			import Control.PeerToPeerEvent;
+			
+			import Model.Constants;
+			
+			import be.nascom.flash.net.upload.UploadPostHelper;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.graphics.ImageSnapshot;
+			import mx.graphics.codec.JPEGEncoder;
+			
+			import org.osmf.net.StreamType;
+
+			public var camera:Camera;
+			private var captureTimer:Timer;
+			
+			[Bindable]
+			public var printlogform:CreatePrintLogForm;
+
+			protected function creationCompleteHandler(event:FlexEvent):void
+			{
+				FlexGlobals.topLevelApplication.peerToPeer.startBroadcasting();
+				startAutocapture();
+				this.currentState="broadcasting";
+			}
+
+			protected function webcamVD_creationCompleteHandler(event:FlexEvent):void
+			{
+				camera=Camera.getCamera();
+				camera.setMode(Constants.VIDEOIN_WIDTH, Constants.VIDEOIN_HEIGHT, Constants.VIDEOIN_FPS, true);
+				camera.setQuality(Constants.WEBCAM_BANDWIDTH, Constants.WEBCAM_QUALITY);
+				if (camera)
+				{
+					FlexGlobals.topLevelApplication.peerToPeer.streamOut.attachCamera(camera);
+					webcamVD.videoObject.attachCamera(camera);
+					FlexGlobals.topLevelApplication.peerToPeer.sendMessage(Constants.P2P_PRINT_STARTED_MSG);
+				}
+				else
+				{
+					Alert.show("Aucune camera detectée!");
+				}
+			}
+
+			
+			private function startAutocapture(event:MouseEvent=null):void
+			{
+				trace("startAutocapture()");
+				captureTimer=new Timer(Constants.SNAPSHOT_FREQUENCY);
+				captureTimer.addEventListener(TimerEvent.TIMER, onTimer, false, 0, true);
+				captureTimer.start();
+			}
+
+			private function onTimer(event:TimerEvent):void
+			{
+				captureAndSend();
+			}
+
+			private function captureAndSend(event:MouseEvent=null):void
+			{
+				var snapShot:BitmapData=ImageSnapshot.captureBitmapData(webcamVD);
+				var ba:ByteArray=new JPEGEncoder(Constants.SNAPSHOT_COMPRESSION).encode(snapShot);
+				var vars:Object=new Object();
+				vars.idmodels=FlexGlobals.topLevelApplication.selectedModel.idmodels;
+				vars.tmp_name=new Date().time + ".jpg";
+				//trace("captureAndSend: "+vars.tmp_name);
+				printlogform.statusLabel.text = "Envoi de "+vars.tmp_name+"...";
+				
+				var urlRequest:URLRequest=new URLRequest(Constants.UPLOADURL);
+				urlRequest.requestHeaders.push(new URLRequestHeader('Content-type', 'multipart/form-data; boundary=' + UploadPostHelper.getBoundary()));
+				urlRequest.method=URLRequestMethod.POST;
+				urlRequest.data=UploadPostHelper.getPostData(vars.tmp_name, ba, "Filedata", vars);
+				urlRequest.requestHeaders.push(new URLRequestHeader('Cache-Control', 'no-cache'));
+				
+				var urlLoader:URLLoader=new URLLoader();
+				urlLoader.addEventListener(IOErrorEvent.IO_ERROR, onIoError, false, 0, true);
+				urlLoader.addEventListener(ProgressEvent.PROGRESS, onProgress, false, 0, true);
+				urlLoader.addEventListener(SecurityErrorEvent.SECURITY_ERROR, onSecurityError, false, 0, true);
+				urlLoader.addEventListener(HTTPStatusEvent.HTTP_STATUS, onHttpStatus, false, 0, true);
+				urlLoader.addEventListener(Event.COMPLETE, uploadComplete, false, 0, true);
+				urlLoader.dataFormat=URLLoaderDataFormat.BINARY;
+				urlLoader.load(urlRequest);
+			}
+
+			private function onHttpStatus(event:HTTPStatusEvent):void
+			{
+				trace("HTTPSTATUS: " + event.status);
+			}
+
+			private function onSecurityError(event:SecurityErrorEvent):void
+			{
+				trace("SECURITY ERROR: " + event.text);
+			}
+
+			private function onProgress(event:ProgressEvent):void
+			{
+				trace("ONPROGRESS: " + event.bytesLoaded);
+			}
+
+			private function onIoError(event:IOErrorEvent):void
+			{
+				trace("IOERROR: " + event.text);
+			}
+
+			private function uploadComplete(e:Event):void
+			{
+				/* if (imgArray.length > 0)
+				urlEncodeUpload(imgArray.pop()); */
+				printlogform.statusLabel.text = "";
+			}
+
+			public function close():void
+			{
+				captureTimer.stop();
+				captureTimer.removeEventListener(TimerEvent.TIMER, onTimer);
+				if(FlexGlobals.topLevelApplication.peerToPeer.streamOut)	
+					FlexGlobals.topLevelApplication.peerToPeer.streamOut.attachCamera(null);
+				if(webcamVD)
+					webcamVD.videoObject.attachCamera(null);
+				if(camera)
+					camera=null;
+			}
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="normal"/>
+		<s:State name="broadcasting"/>
+	</s:states>
+	<s:VGroup includeIn="broadcasting"
+			  width="100%"
+			  height="100%"
+			  horizontalAlign="center"
+			  gap="20">
+		<s:BorderContainer backgroundColor="black"
+						   width="100%"
+						   height="100%">
+			<s:Label id="statusText"
+					 text="Connexion en cours..."
+					 color="white"
+					 verticalCenter="0"
+					 horizontalCenter="0"
+					 fontSize="16"/>
+		</s:BorderContainer>
+	</s:VGroup>
+	<s:VideoDisplay id="webcamVD"
+					width="100%"
+					height="100%"
+					creationComplete="webcamVD_creationCompleteHandler(event)"
+					includeIn="broadcasting">
+		<s:source>
+			<s:DynamicStreamingVideoSource host=""
+										   streamType="{StreamType.LIVE}">
+				<s:DynamicStreamingVideoItem/>
+			</s:DynamicStreamingVideoSource>
+		</s:source>
+	</s:VideoDisplay>
+</s:Group>

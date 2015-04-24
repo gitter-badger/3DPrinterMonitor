@@ -1,0 +1,19 @@
+/* CSS file */
+@namespace s "library://ns.adobe.com/flex/spark";
+@namespace mx "library://ns.adobe.com/flex/mx";
+s|Form
+{
+	textAlign: center;
+}
+
+s|FormItem
+{
+	fontSize: 12;
+	textAlign: right;
+	skinClass: ClassReference("Skins.FormItemSkin");
+}
+
+s|FormItem s|TextInput
+{
+	textAlign: center;
+}

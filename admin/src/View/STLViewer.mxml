@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:View="View.*"
+		 gap="0"
+		 creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import Control.InteractionEvent;
+
+			import Model.Constants;
+
+			import away3d.containers.View3D;
+
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				systemManager.addEventListener(InteractionEvent.START_STOP, handleStartStop);
+				systemManager.addEventListener(InteractionEvent.SELECTED_MODEL_CHANGED, handleStartStop);
+				scene.loadFile(Constants.MODELSURL + FlexGlobals.topLevelApplication.selectedModel.STLfile);
+				//scene.loadFile(Constants.MODELSURL + "dodge-challenger_model.stl");
+				//scene.loadFile(Constants.MODELSURL + "MH6.stl");
+				//scene.loadFile(Constants.MODELSURL + "Su-27.stl");
+			}
+
+			private function handleStartStop(event:InteractionEvent):void
+			{
+				if (event.param.start == false && event.type == InteractionEvent.START_STOP)
+				{
+					scene.alpha=0.5;
+					scene.renderEnabled=false;
+				}
+				else
+				{
+					scene.renderEnabled=true;
+					scene.loadFile(Constants.MODELSURL + FlexGlobals.topLevelApplication.selectedModel.STLfile);
+				}
+			}
+		]]>
+	</fx:Script>
+	<View:STLViewerTopBar/>
+	<View:STLViewerScene id="scene"/>
+</s:VGroup>

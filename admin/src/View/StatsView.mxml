@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  xmlns:printlogsservice="services.printlogsservice.*"
+		  xmlns:printlogsservices="services.printlogsservices.*"
+		  xmlns:View="View.*"
+		  color="#FFFFFF"
+		  xmlns:printedmodelsservice="services.printedmodelsservice.*"
+		  width="100%"
+		  height="100%"
+		  creationComplete="group1_creationCompleteHandler(event)"
+		  gap="20"
+		  paddingBottom="10"
+		  paddingLeft="10"
+		  paddingRight="10"
+		  paddingTop="10"
+		  xmlns:Components="View.Components.*">
+	<fx:Script>
+		<![CDATA[
+			import Control.ServerEvent;
+			
+			import Model.Constants;
+			
+			import mx.collections.ArrayCollection;
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.FlexEvent;
+			import mx.rpc.events.ResultEvent;
+			import mx.utils.ObjectUtil;
+			
+			import valueObjects.PrintLogs;
+
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				systemManager.addEventListener(ServerEvent.REFRESH_PRINTLOGS, handleRefreshPrintLogs, true);
+				getAllPrintLogsResult.token=printLogsService.getAllPrintLogs();
+			}
+
+			private function handleRefreshPrintLogs(event:ServerEvent):void
+			{
+				getAllPrintLogsResult.token=printLogsService.getAllPrintLogs();
+				setAppLabel();
+			}
+
+			protected function columnChart_creationCompleteHandler(event:FlexEvent):void
+			{
+				//WARNING!!! NEVER USE THE SAME VARIABLE NAME FOR CALL RESPONDERS AND SERVICES!!! THEY SEEMS TO BE UNIQUE!!!
+				//getAll3DModelsResult2.token = printedModelsService2.getAll3DModels();
+			}
+
+			protected function getAllPrintLogsResult_resultHandler(event:ResultEvent):void
+			{
+				setAppLabel();
+			}
+
+			protected function setAppLabel():void
+			{
+				if(ArrayCollection(getAllPrintLogsResult.lastResult).length)
+				{
+					var startDate:String=resumeformatter.format(ArrayCollection(getAllPrintLogsResult.lastResult).getItemAt(0).date);
+					var endDate:String=resumeformatter.format(ArrayCollection(getAllPrintLogsResult.lastResult).getItemAt(getAllPrintLogsResult.lastResult.length - 1).date);
+					FlexGlobals.topLevelApplication.titleLabelResume = countFails() + " fails / " + getAllPrintLogsResult.lastResult.length + " impressions du " + startDate + " au " + endDate;
+					setSummaryLabel();
+				}
+			}
+			
+			private var weightSum:int = 0;
+			private var weightFailSum:int = 0;
+			
+			private function setSummaryLabel():void
+			{
+				weightSum = sumWeight();
+				weightFailSum = sumWeight(true);
+				summaryLabel.text = weightSum + "g imprimés, " + weightFailSum + "g perdus, " 
+					+ (weightSum-weightFailSum) + "g utilisés."
+					+ " Cout: " + (weightSum * Constants.PRICE_PER_GRAM_IN_DOLLARS * Constants.DOLLAR_EURO).toPrecision(2)+"€, "
+					+ (weightFailSum * Constants.PRICE_PER_GRAM_IN_DOLLARS * Constants.DOLLAR_EURO).toPrecision(2)+"€ de pertes, "
+					+ ((weightSum-weightFailSum) * Constants.PRICE_PER_GRAM_IN_DOLLARS * Constants.DOLLAR_EURO).toPrecision(2)+"€ en stock."
+			}
+			
+			private function sumWeight(countOnlyFails:Boolean = false):int
+			{
+				var total:int = 0;
+				//trace("sumweight: "+getAllPrintLogsResult.lastResult.length);
+				for each (var item:Object in getAllPrintLogsResult.lastResult) 
+				{
+					//trace("total : "+item.weight+" completion: "+item.completion);
+					if(countOnlyFails)
+					{
+						if(item.completion < 100)
+							total += item.weight;
+					}
+					else
+					{
+						total += item.weight;
+					}
+				}
+				return total;
+			}
+			
+			private function countFails():int
+			{
+				var total:int = 0;
+				for each (var item:Object in getAllPrintLogsResult.lastResult) 
+				{
+					if(item.completion < 100)
+					{
+						total += 1;
+					}
+				}
+				return total;
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:DateTimeFormatter id="resumeformatter"
+							 dateTimePattern="d MMM yyyy"
+							 locale="fr-FR"/>
+		<s:DateTimeFormatter id="datatipformatter"
+							 dateTimePattern="d MMMM yyyy HH:mm"
+							 locale="fr-FR"/>
+		<s:DateTimeFormatter id="axisformatter"
+							 dateTimePattern="dd MMMM yyyy HH:mm"
+							 locale="fr-FR"/>
+		<s:DateTimeFormatter id="timeformatter"
+							 dateTimePattern="HH heures mm min"
+							 locale="fr-FR"/>
+		<s:CallResponder id="getAllPrintLogsResult"
+						 result="getAllPrintLogsResult_resultHandler(event)"/>
+		<printlogsservices:PrintLogsServices id="printLogsService"
+											 fault="Alert.show(event.fault.faultString + '\n' + event.fault.faultDetail)"
+											 showBusyCursor="true"/>
+		<!--<s:CallResponder id="getAll3DModelsResult2"/>
+		<printedmodelsservice:PrintedModelsService id="printedModelsService2"
+												   fault="Alert.show(event.fault.faultString + '\n' + event.fault.faultDetail)"
+												   showBusyCursor="true"/>-->
+	</fx:Declarations>
+	<s:Label id="summaryLabel"
+			 fontSize="12"
+			 width="100%"/>
+	<s:Label id="titleLabel3"
+			 fontSize="16"
+			 text="Taux d'impression"
+			 width="100%"/>
+	<Components:CompletionAreaChart width="100%"
+									height="100%"
+									dataProvider="{(getAllPrintLogsResult.lastResult.length > 1) ? getAllPrintLogsResult.lastResult : null}"/>
+	<s:Label id="titleLabel"
+			 fontSize="16"
+			 text="Qualité"
+			 width="100%"/>
+	<Components:QAareaChart width="100%"
+							height="100%"
+							dataProvider="{(getAllPrintLogsResult.lastResult.length > 1) ? getAllPrintLogsResult.lastResult : null}"/>
+	<s:Label id="titleLabel2"
+			 fontSize="16"
+			 text="Durée d'impression"
+			 width="100%"/>
+	<Components:TimeAreaChart width="100%"
+							  height="100%"
+							  dataProvider="{(getAllPrintLogsResult.lastResult.length > 1) ? getAllPrintLogsResult.lastResult : null}"/>
+</s:VGroup>

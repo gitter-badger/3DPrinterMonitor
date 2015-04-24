@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.ui.externaltools.ProgramBuilderLaunchConfigurationType">
+<booleanAttribute key="org.eclipse.debug.ui.ATTR_LAUNCH_IN_BACKGROUND" value="false"/>
+<listAttribute key="org.eclipse.debug.ui.favoriteGroups">
+<listEntry value="org.eclipse.ui.externaltools.launchGroup"/>
+</listAttribute>
+<booleanAttribute key="org.eclipse.ui.externaltools.ATTR_BUILDER_ENABLED" value="false"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_LAUNCH_CONFIGURATION_BUILD_SCOPE" value="${projects:STLWebViewer}"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_LOCATION" value="/usr/bin/rsync"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_TOOL_ARGUMENTS" value="-vcrz&#10;--delete-after&#10;--exclude be&#10;--exclude php/models&#10;--exclude php/debug.php&#10;--exclude php/index.php&#10;--exclude php/PrintedModelsService.php&#10;--exclude php/PrintLogsServices.php&#10;--exclude php/SalesServices.php&#10;--exclude php/ffmpeg.php&#10;--exclude php/ffmpeg.sh&#10;--include php/uploada.php&#10;--include STLWebViewerAdmin.html&#10;--include STLWebViewerAdmin.swf&#10;--exclude mx_4.6.0.23201.swz&#10;--exclude ZendFramework/&#10;--exclude playerProductInstall.swf&#10;--exclude amf_config.ini&#10;--exclude rpc_4.6.0.23201.swz&#10;--exclude charts_4.6.0.23201.swz&#10;--exclude  spark_4.6.0.23201.swz&#10;--exclude expressInstall.swf&#10;--exclude sparkskins_4.6.0.23201.swz&#10;--exclude framework_4.6.0.23201.swz&#10;--exclude swfobject.js&#10;--exclude gateway.php&#10;--exclude textLayout_2.0.0.232.swz&#10;--exclude history/&#10;.&#10;stef@87.98.133.26:www/lab/PrintManager/adminapp"/>
+<booleanAttribute key="org.eclipse.ui.externaltools.ATTR_TRIGGERS_CONFIGURED" value="true"/>
+<stringAttribute key="org.eclipse.ui.externaltools.ATTR_WORKING_DIRECTORY" value="${workspace_loc:/STLWebViewer/bin-release}"/>
+</launchConfiguration>

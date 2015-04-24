@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:AreaChart xmlns:fx="http://ns.adobe.com/mxml/2009"
+			  xmlns:s="library://ns.adobe.com/flex/spark"
+			  xmlns:mx="library://ns.adobe.com/flex/mx"
+			  width="100%"
+			  height="100%"
+			  dataTipFunction="QAChartDataTipFunction"
+			  showDataTips="true"
+			  xmlns:View="View.*">
+	<fx:Script>
+		<![CDATA[
+			import Model.Constants;
+			
+			import mx.charts.HitData;
+
+			private function timeChartDataTipFunction(item:HitData):String
+			{
+				if (!item.item)
+					return "";
+				var formatted:String=datatipformatter.format(item.item.date);
+				return "<b>" + formatted + "</b><br />" + item.item.time + " <i>secondes</i>";
+			}
+
+			private function QAChartDataTipFunction(item:HitData):String
+			{
+				if (!item.item)
+					return "";
+				var formatted:String=datatipformatter.format(item.item.date);
+				return "<b>" + formatted + "</b><br />" + item.item.completion + " <i>%</i>";
+			}
+
+			public function defineLabel(cat:Object, pcat:Object, ax:CategoryAxis, labelItem:Object):String
+			{
+				return axisformatter.format(cat);
+			}
+			
+			public function QAaxisLabelFunction(
+				cat:Object, 
+				pcat:Object,
+				ax:LinearAxis):String 
+			{
+				return cat + "%";
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:SeriesInterpolate id="seriesSlide"
+							  duration="1000"/>
+		<s:DateTimeFormatter id="datatipformatter"
+							 dateTimePattern="d MMMM yyyy HH:mm"
+							 locale="fr-FR"/>
+		<s:DateTimeFormatter id="axisformatter"
+							 dateTimePattern="dd MM / yyyy HH:mm"
+							 locale="fr-FR"/>
+	</fx:Declarations>
+	<mx:horizontalAxisRenderers>
+		<mx:AxisRenderer axis="{categoryAxis}"
+						 canDropLabels="true"/>
+	</mx:horizontalAxisRenderers>
+	<mx:horizontalAxis>
+		<mx:CategoryAxis id="categoryAxis"
+						 categoryField="date"
+						 labelFunction="defineLabel"/>
+	</mx:horizontalAxis>
+	<mx:verticalAxis>
+		<mx:LinearAxis id="QAVerticalAxis" labelFunction="QAaxisLabelFunction"  minimum="0" maximum="100" displayName="QA en %"/>
+	</mx:verticalAxis> 
+	<mx:series>
+		<mx:AreaSeries id="lineSeries2"
+								 yField="completion"
+								 form="curve">
+			<mx:areaFill>
+				<s:SolidColor color="{Constants.CHART_COLOR_ORANGE}"/>
+			</mx:areaFill>
+		</mx:AreaSeries>
+	</mx:series>
+</mx:AreaChart>

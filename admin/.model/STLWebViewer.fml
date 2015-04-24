@@ -1,0 +1,435 @@
+
+<model xmlns="http://ns.adobe.com/Fiber/1.0">
+  <annotation name="ActionScriptGeneration">
+    <item name="FullyQualifyReferences">true</item>
+  </annotation>
+  <entity name="Sales" persistent="true">
+    <annotation name="EntityProperties">
+      <item name="EntityOriginalName">Sales</item>
+    </annotation>
+    <annotation name="service Group">
+      <item name="service">SalesServices</item>
+    </annotation>
+    <annotation name="ServerProperties">
+      <item name="IncludeRemoteClass">nonempty</item>
+    </annotation>
+    <annotation name="DataManagement">
+      <item name="create">createSales</item>
+      <item name="update">updateSales</item>
+      <item name="get">getSalesByID</item>
+      <item name="delete">deleteSales</item>
+      <item name="fillFunc">getAllSales,getSales_paged,getAllSalesFromModelID</item>
+      <item name="managingService">SalesServices</item>
+    </annotation>
+    <annotation name="getSalesByID">
+      <item name="propertySpecifier">idsales,models_idmodels,pricesold,date</item>
+    </annotation>
+    <annotation name="getAllSales">
+      <item name="propertySpecifier">idsales,models_idmodels,pricesold,date</item>
+    </annotation>
+    <annotation name="getSales_paged">
+      <item name="propertySpecifier">idsales,models_idmodels,pricesold,date</item>
+      <item name="pagingEnabled">true</item>
+      <item name="positionalPagingParameters">true</item>
+      <item name="countOperation">count</item>
+    </annotation>
+    <annotation name="ActionScriptGeneration">
+      <item name="Package">valueObjects</item>
+    </annotation>
+    <annotation name="getAllSalesFromModelID">
+      <item name="propertySpecifier">idsales,models_idmodels,pricesold,date</item>
+    </annotation>
+    <id name="idsales" type="integer"/>
+    <property name="models_idmodels" type="integer"/>
+    <property name="pricesold" type="string"/>
+    <property name="date" type="date"/>
+  </entity>
+  <service name="PrintedModelsService">
+    <annotation name="ActionScriptGeneration">
+      <item name="Source">PrintedModelsService</item>
+      <item name="ServiceType">RemoteObject</item>
+      <item name="Package">services.printedmodelsservice</item>
+      <item name="Endpoint">gateway.php</item>
+      <item name="Destination">PrintedModelsService</item>
+    </annotation>
+    <annotation name="ServiceTypeGroup">
+      <item name="ServiceBackendType">PHP</item>
+    </annotation>
+    <annotation name="ServiceConfig">
+      <item name="PHP_RELATIVE_LOCATION">php/PrintedModelsService.php</item>
+      <item name="PHP_SERVER_ROOT">/Volumes/Macintosh HD/Users/stef/Sites/Lab/STLWebViewer/server/adminapp</item>
+      <item name="PHP_SERVICES_FOLDER">/Volumes/Macintosh HD/Users/stef/Sites/Lab/STLWebViewer/server/adminapp/php</item>
+      <item name="PHP_LOCATION">/Volumes/Macintosh HD/Users/stef/Sites/Lab/STLWebViewer/server/adminapp/php/PrintedModelsService.php</item>
+      <item name="DEFAULT_ENTITY_PACKAGE">valueObjects</item>
+      <item name="LINKED_FILE">PrintedModelsService.php</item>
+      <item name="ABSOLUTE_ENDPOINT">http://localhost:8888/Lab/STLWebViewer/server/adminapp/gateway.php</item>
+      <item name="PHP_CLASS_NAME">PrintedModelsService</item>
+    </annotation>
+    <function name="count" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="returnType">opaque</item>
+      </annotation>
+    </function>
+    <function name="create3DModels" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="item" type="Type3DModels"/>
+    </function>
+    <function name="delete3DModels" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="itemID" type="opaque"/>
+    </function>
+    <function name="get3DModels_paged" return-type="opaque[]">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque,opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="startIndex" type="opaque"/>
+      <parameter name="numItems" type="opaque"/>
+    </function>
+    <function name="get3DModelsByID" return-type="Type3DModels[]">
+      <annotation name="analyze group">
+        <item name="analyzed">true</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <annotation name="ValidProperties">
+        <item name="propertySpecifier">weight,sizeZ,sizeY,name,STLfile,sizeX,idmodels,cost,TVA,RRP</item>
+      </annotation>
+      <parameter name="itemID" type="opaque"/>
+    </function>
+    <function name="getAll3DModels" return-type="Type3DModels[]">
+      <annotation name="analyze group">
+        <item name="analyzed">true</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="returnType">opaque</item>
+      </annotation>
+      <annotation name="ValidProperties">
+        <item name="propertySpecifier">weight,sizeZ,sizeY,name,STLfile,sizeX,idmodels,cost,TVA,RRP</item>
+      </annotation>
+    </function>
+    <function name="update3DModels" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="item" type="Type3DModels"/>
+    </function>
+  </service>
+  <entity name="Type3DModels" persistent="true">
+    <annotation name="EntityProperties">
+      <item name="EntityOriginalName">Type3DModels</item>
+    </annotation>
+    <annotation name="service Group">
+      <item name="service">PrintedModelsService</item>
+    </annotation>
+    <annotation name="ServerProperties">
+      <item name="IncludeRemoteClass">nonempty</item>
+    </annotation>
+    <annotation name="DataManagement">
+      <item name="create">create3DModels</item>
+      <item name="update">update3DModels</item>
+      <item name="get">get3DModelsByID(idmodels)</item>
+      <item name="fillFunc">getAll3DModels</item>
+      <item name="managingService">PrintedModelsService</item>
+    </annotation>
+    <annotation name="get3DModelsByID">
+      <item name="propertySpecifier">weight,sizeZ,sizeY,name,STLfile,sizeX,idmodels,cost,TVA,RRP</item>
+    </annotation>
+    <annotation name="getAll3DModels">
+      <item name="propertySpecifier">weight,sizeZ,sizeY,name,STLfile,sizeX,idmodels,cost,TVA,RRP</item>
+    </annotation>
+    <annotation name="get3DModels_paged">
+      <item name="propertySpecifier">idmodels,STLfile,name,sizeX,sizeY,sizeZ,weight,cost,RRP,TVA</item>
+      <item name="pagingEnabled">true</item>
+      <item name="positionalPagingParameters">true</item>
+      <item name="countOperation">count</item>
+    </annotation>
+    <annotation name="ActionScriptGeneration">
+      <item name="Package">valueObjects</item>
+    </annotation>
+    <property name="weight" type="string" required="true"/>
+    <property name="sizeZ" type="string" required="true"/>
+    <property name="sizeY" type="string" required="true"/>
+    <property name="name" type="string" required="true"/>
+    <property name="STLfile" type="string" required="true"/>
+    <property name="sizeX" type="string" required="true"/>
+    <id name="idmodels" type="integer" generated="false"/>
+    <property name="cost" type="string" required="true"/>
+    <property name="TVA" type="string" required="true"/>
+    <property name="RRP" type="string" required="true"/>
+  </entity>
+  <service name="SalesServices">
+    <annotation name="ActionScriptGeneration">
+      <item name="Source">salesServices</item>
+      <item name="ServiceType">RemoteObject</item>
+      <item name="Package">salesservices</item>
+      <item name="Endpoint">gateway.php</item>
+      <item name="Destination">salesServices</item>
+    </annotation>
+    <annotation name="ServiceTypeGroup">
+      <item name="ServiceBackendType">PHP</item>
+    </annotation>
+    <annotation name="ServiceConfig">
+      <item name="PHP_RELATIVE_LOCATION">php/SalesServices.php</item>
+      <item name="DEFAULT_ENTITY_PACKAGE">valueObjects</item>
+      <item name="PHP_SERVICES_FOLDER">/Volumes/Macintosh HD/Users/stef/Sites/Lab/STLWebViewer/server/php</item>
+      <item name="PHP_LOCATION">/Volumes/Macintosh HD/Users/stef/Sites/Lab/STLWebViewer/server/php/SalesServices.php</item>
+      <item name="LINKED_FILE">salesServices.php</item>
+      <item name="ABSOLUTE_ENDPOINT">http://localhost:8888/Lab/STLWebViewer/server/adminapp/gateway.php</item>
+      <item name="PHP_CLASS_NAME">salesServices</item>
+    </annotation>
+    <function name="getAllSales" return-type="opaque[]">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="returnType">opaque</item>
+      </annotation>
+    </function>
+    <function name="getAllSalesFromModelID" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="modelID" type="opaque"/>
+    </function>
+    <function name="getSalesByID" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="itemID" type="opaque"/>
+    </function>
+    <function name="createSales" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="item" type="opaque"/>
+    </function>
+    <function name="updateSales" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="item" type="opaque"/>
+    </function>
+    <function name="deleteSales" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="itemID" type="opaque"/>
+    </function>
+    <function name="count" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="returnType">opaque</item>
+      </annotation>
+    </function>
+    <function name="getSales_paged" return-type="opaque[]">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque,opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="startIndex" type="opaque"/>
+      <parameter name="numItems" type="opaque"/>
+    </function>
+  </service>
+  <service name="PrintLogsServices">
+    <annotation name="ActionScriptGeneration">
+      <item name="Source">PrintLogsServices</item>
+      <item name="ServiceType">RemoteObject</item>
+      <item name="Package">services.PrintLogsServices</item>
+      <item name="Endpoint">gateway.php</item>
+      <item name="Destination">PrintLogsServices</item>
+    </annotation>
+    <annotation name="ServiceTypeGroup">
+      <item name="ServiceBackendType">PHP</item>
+    </annotation>
+    <annotation name="ServiceConfig">
+      <item name="PHP_RELATIVE_LOCATION">Lab/STLWebViewer/server/adminapp/php/PrintLogsServices.php</item>
+      <item name="PHP_SERVER_ROOT">/Volumes/Macintosh HD/Users/stef/Sites/</item>
+      <item name="DEFAULT_ENTITY_PACKAGE">valueObjects</item>
+      <item name="PHP_SERVICES_FOLDER">/Volumes/Macintosh HD/Users/stef/Sites/Lab/STLWebViewer/server/adminapp/php</item>
+      <item name="PHP_LOCATION">/Volumes/Macintosh HD/Users/stef/Sites/Lab/STLWebViewer/server/adminapp/php/PrintLogsServices.php</item>
+      <item name="LINKED_FILE">PrintLogsServices.php</item>
+      <item name="ABSOLUTE_ENDPOINT">http://localhost:8888/Lab/STLWebViewer/server/adminapp/gateway.php</item>
+      <item name="PHP_CLASS_NAME">PrintLogsServices</item>
+    </annotation>
+    <function name="count" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="returnType">opaque</item>
+      </annotation>
+    </function>
+    <function name="createPrintLogs" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="item" type="PrintLogs"/>
+    </function>
+    <function name="deletePrintLogs" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="itemID" type="opaque"/>
+    </function>
+    <function name="getAllPrintLogs" return-type="PrintLogs[]">
+      <annotation name="analyze group">
+        <item name="analyzed">true</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="returnType">opaque</item>
+      </annotation>
+      <annotation name="ValidProperties">
+        <item name="propertySpecifier">time,QA,models_idmodels,date,idprintLogs</item>
+      </annotation>
+    </function>
+    <function name="getAllPrintLogsByModelID" return-type="PrintLogs[]">
+      <annotation name="analyze group">
+        <item name="analyzed">true</item>
+      </annotation>
+      <annotation name="ValidProperties">
+        <item name="propertySpecifier">idprintLogs,models_idmodels,QA,time,date,weight,completion,encoding</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="modelID" type="opaque"/>
+    </function>
+    <function name="getPrintLogs_paged" return-type="opaque[]">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque,opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="startIndex" type="opaque"/>
+      <parameter name="numItems" type="opaque"/>
+    </function>
+    <function name="getPrintLogsByID" return-type="PrintLogs[]">
+      <annotation name="analyze group">
+        <item name="analyzed">true</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <annotation name="ValidProperties">
+        <item name="propertySpecifier">time,QA,models_idmodels,date,idprintLogs</item>
+      </annotation>
+      <parameter name="itemID" type="opaque"/>
+    </function>
+    <function name="updatePrintLogs" return-type="opaque">
+      <annotation name="analyze group">
+        <item name="analyzed">false</item>
+      </annotation>
+      <annotation name="original signature">
+        <item name="inputParams">opaque</item>
+        <item name="returnType">opaque</item>
+      </annotation>
+      <parameter name="item" type="PrintLogs"/>
+    </function>
+  </service>
+  <entity name="PrintLogs" persistent="true">
+    <annotation name="EntityProperties">
+      <item name="EntityOriginalName">PrintLogs</item>
+    </annotation>
+    <annotation name="service Group">
+      <item name="service">PrintLogsServices,PrintLogsServicesDummy</item>
+    </annotation>
+    <annotation name="ServerProperties">
+      <item name="IncludeRemoteClass">nonempty</item>
+    </annotation>
+    <annotation name="DataManagement">
+      <item name="create">createPrintLogs</item>
+      <item name="update">updatePrintLogs</item>
+      <item name="get">getPrintLogsByID(idprintLogs)</item>
+      <item name="managingService">PrintLogsServices</item>
+      <item name="fillFunc">getAllPrintLogs,getAllPrintLogsByModelID</item>
+    </annotation>
+    <annotation name="getPrintLogsByID">
+      <item name="propertySpecifier">time,QA,models_idmodels,date,idprintLogs</item>
+    </annotation>
+    <annotation name="getAllPrintLogs">
+      <item name="propertySpecifier">time,QA,models_idmodels,date,idprintLogs</item>
+    </annotation>
+    <annotation name="getPrintLogs_paged">
+      <item name="propertySpecifier">idprintLogs,models_idmodels,QA,time,date,weight,completion,encoding</item>
+      <item name="pagingEnabled">true</item>
+      <item name="positionalPagingParameters">true</item>
+      <item name="countOperation">count</item>
+    </annotation>
+    <annotation name="ActionScriptGeneration">
+      <item name="Package">valueObjects</item>
+    </annotation>
+    <annotation name="getAllPrintLogsByModelID">
+      <item name="propertySpecifier">idprintLogs,models_idmodels,QA,time,date,weight,completion,encoding</item>
+    </annotation>
+    <id name="idprintLogs" type="integer"/>
+    <property name="models_idmodels" type="integer"/>
+    <property name="QA" type="integer"/>
+    <property name="time" type="integer"/>
+    <property name="date" type="date"/>
+    <property name="weight" type="integer"/>
+    <property name="completion" type="integer"/>
+    <property name="encoding" type="integer"/>
+  </entity>
+</model>

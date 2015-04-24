@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:VGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  paddingBottom="10"
+		  paddingLeft="10"
+		  paddingRight="10"
+		  paddingTop="10"
+		  verticalAlign="middle"
+		  horizontalAlign="center" creationComplete="vgroup1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import Model.Constants;
+			
+			import mx.collections.ArrayCollection;
+			import mx.core.FlexGlobals;
+			import mx.core.IFlexDisplayObject;
+			import mx.events.FlexEvent;
+			import mx.events.ItemClickEvent;
+			import mx.managers.PopUpManager;
+			
+			import spark.events.IndexChangeEvent;
+			[Bindable]
+			public var dataprovider:ArrayCollection;
+			[Bindable]
+			public var popup:IFlexDisplayObject;
+			[Bindable]
+			public var printlog:Object;
+			
+			protected function vgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				var url:String=Constants.LISTFILES_URL + "?dir=" + FlexGlobals.topLevelApplication.selectedModel.idmodels + "/" + printlog.idprintLogs;
+				trace("url: " + url);
+				var loader:URLLoader=new URLLoader(new URLRequest(url));
+				loader.addEventListener(Event.COMPLETE, onComplete);
+				loader.dataFormat=URLLoaderDataFormat.TEXT;
+				loader.addEventListener(HTTPStatusEvent.HTTP_STATUS, onHttpStatus);
+			}
+			
+			private function onHttpStatus(event:HTTPStatusEvent):void
+			{
+				trace("images status: " + event.status);
+			}
+			
+			private function onComplete(event:Event):void
+			{
+				if(event.target.data.length)
+				{
+					var tmp:Array=event.target.data.split(",");
+					trace("images complete: " + tmp);
+					dataprovider=new ArrayCollection(tmp);
+					this.currentState = "list";
+				}
+				else
+				{
+					this.currentState = "noimages"
+				}
+			}
+			
+			protected function img_clickHandler(event:MouseEvent):void
+			{
+				this.currentState="list";
+			}
+
+			protected function picsList_changeHandler(event:IndexChangeEvent):void
+			{
+				this.currentState="image";
+				img.source=event.currentTarget.selectedItem;
+				picsList.selectedIndex = -1;
+				//PopUpManager.centerPopUp(popup);				
+			}
+			
+		]]>
+	</fx:Script>
+	<s:states>
+		<s:State name="start" />
+		<s:State name="noimages" />
+		<s:State name="list"/>
+		<s:State name="image"/>
+	</s:states>
+	<s:Label text.noimages="Pas d'images pour cette impression."
+			 text.start="Chargement..."
+			 includeIn="start, noimages"
+			 width="100%"
+			 textAlign="center"
+			 color="#BBBBBB"
+			 fontWeight="bold"
+			 fontSize="16"/>
+	<s:List id="picsList"
+			includeIn="list"
+			width="100%"
+			height="100%"
+			borderVisible="false"
+			horizontalScrollPolicy="off"
+			change="picsList_changeHandler(event)"
+			itemRenderer="View.Components.PrintImagesItemRenderer"
+			dataProvider="{dataprovider}">
+		<s:layout>
+			<s:TileLayout horizontalGap="10"
+						  verticalGap="10"
+						  columnWidth="240"
+						  rowHeight="180"
+						  requestedColumnCount="3"/>
+		</s:layout>
+	</s:List>
+	<s:Image id="img"
+			 toolTip="cliquer pour revenir a la liste"
+			 click="img_clickHandler(event)"
+			 includeIn="image"/>
+</s:VGroup>

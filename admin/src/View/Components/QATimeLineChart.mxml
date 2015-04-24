@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<mx:LineChart xmlns:fx="http://ns.adobe.com/mxml/2009" 
+			  xmlns:s="library://ns.adobe.com/flex/spark" 
+			  xmlns:mx="library://ns.adobe.com/flex/mx" 
+			  width="100%" height="100%" dataTipFunction="QAChartDataTipFunction"
+			  dataTipMode="multiple" showDataTips="true">
+	<fx:Script>
+		<![CDATA[
+			import Model.Constants;
+			
+			import mx.charts.HitData;
+			
+			import valueObjects.PrintLogs;
+			
+			private function QAChartDataTipFunction(item:HitData):String 
+			{
+				var formattedDate:String = datatipformatter.format(item.item.date);
+				var formattedTime:String = Constants.timeFormat(item.item.time);
+				return "impression #" + item.item.idprintLogs + "<br/>" + formattedDate + "<br /><b>" + item.item.QA + " <i>%</i> en " + formattedTime + "</b>";
+				/*if(LineSeries(item.element).yField == "QA")
+				{
+				return "<b>" + LineSeries(item.element).displayName + "<br/>" + formattedDate + "</b><br />" + pSI.QA + " <i>%</i>";
+				}
+				else if(LineSeries(item.element).yField == "time")
+				{
+				var formattedTime:String = timeFormat(pSI.time);
+				return LineSeries(item.element).displayName + "<br/>" + formattedDate + "<br /><b>" + formattedTime+"</b>";
+				}
+				else
+				{
+				return "NO DATA TIP DEFAULT";
+				}*/
+			}
+			
+			public function QAaxisLabelFunction(
+				cat:Object, 
+				pcat:Object,
+				ax:LinearAxis):String 
+			{
+				return cat + "%";
+			}
+			
+			public function timeAxisLabelFunction(
+				cat:Object, 
+				pcat:Object,
+				ax:LinearAxis):String 
+			{
+				return Constants.timeFormat(int(cat));
+			}
+			
+			public function dateAxisLabelFunction(
+				cat:Object, 
+				pcat:Object,
+				ax:CategoryAxis,
+				labelItem:Object):String 
+			{
+				return axisformatter.format(cat);
+			}
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<mx:SeriesInterpolate id="seriesSlide" duration="1000" />
+		<s:DateTimeFormatter id="datatipformatter" dateTimePattern="d MMMM yyyy HH:mm" locale="fr-FR" />
+		<s:DateTimeFormatter id="axisformatter" dateTimePattern="dd MM / yyyy HH:mm" locale="fr-FR" />
+		<mx:Stroke id="greenStroke" 
+				   color="{Constants.CHART_COLOR_GREEN}" 
+				   weight="8" 
+				   alpha=".75"
+				   caps="square"
+				   />
+		<mx:Stroke id="blueStroke" 
+				   color="{Constants.CHART_COLOR_BLUE}" 
+				   weight="8" 
+				   alpha=".75"
+				   caps="square"
+				   />
+		<mx:Stroke id="orangeStroke" 
+				   color="{Constants.CHART_COLOR_ORANGE}" 
+				   weight="8" 
+				   alpha=".75"
+				   caps="square"
+				   />
+	</fx:Declarations>
+	<mx:backgroundElements>
+		<mx:GridLines>
+			<mx:horizontalStroke>
+				<mx:Stroke color="#333333" />
+			</mx:horizontalStroke>
+		</mx:GridLines>
+	</mx:backgroundElements>
+	<mx:seriesFilters>
+		<fx:Array />
+	</mx:seriesFilters>
+	<mx:horizontalAxisRenderers>
+		<mx:AxisRenderer axis="{categoryAxisDate}" canDropLabels="true"/>
+	</mx:horizontalAxisRenderers>
+	<mx:verticalAxisRenderers>
+		<mx:AxisRenderer axis="{TimeVerticalAxis}" canDropLabels="true" placement="right">
+			<mx:axisStroke>{blueStroke}</mx:axisStroke>
+		</mx:AxisRenderer>
+		<mx:AxisRenderer axis="{QAVerticalAxis}" canDropLabels="true" placement="left">
+			<mx:axisStroke>{greenStroke}</mx:axisStroke>
+		</mx:AxisRenderer>
+		<mx:AxisRenderer axis="{CompletionVerticalAxis}" canDropLabels="true" placement="left">
+			<mx:axisStroke>{orangeStroke}</mx:axisStroke>
+		</mx:AxisRenderer>
+	</mx:verticalAxisRenderers>
+	<mx:horizontalAxis>
+		<mx:CategoryAxis id="categoryAxisDate" categoryField="date" labelFunction="dateAxisLabelFunction"/>
+	</mx:horizontalAxis>
+	<mx:series>
+		<mx:LineSeries id="lineSeriesQA" displayName="Qualité" yField="QA" form="curve" showDataEffect="seriesSlide">
+			<mx:lineStroke>
+				<mx:Stroke color="{Constants.CHART_COLOR_GREEN}" weight="8" caps="square" />
+			</mx:lineStroke>
+			<mx:verticalAxis>
+				<mx:LinearAxis id="QAVerticalAxis" labelFunction="QAaxisLabelFunction"  minimum="0" maximum="100" displayName="QA en %"/>
+			</mx:verticalAxis> 
+		</mx:LineSeries>
+		<mx:LineSeries id="lineSeriesTime" displayName="Durée d'impression" yField="time" form="curve" showDataEffect="seriesSlide">
+			<mx:lineStroke>
+				<mx:Stroke color="{Constants.CHART_COLOR_BLUE}" weight="8" caps="square" />
+			</mx:lineStroke>
+			<mx:verticalAxis>
+				<mx:LinearAxis id="TimeVerticalAxis" labelFunction="timeAxisLabelFunction" displayName="durée d'impression"/>
+			</mx:verticalAxis> 
+		</mx:LineSeries>
+		<mx:LineSeries id="lineSeriesCompletion" displayName="Taux d'impression" yField="completion" form="curve" showDataEffect="seriesSlide">
+			<mx:lineStroke>
+				<mx:Stroke color="{Constants.CHART_COLOR_ORANGE}" weight="8" caps="square" />
+			</mx:lineStroke>
+			<mx:verticalAxis>
+				<mx:LinearAxis id="CompletionVerticalAxis" labelFunction="QAaxisLabelFunction" displayName="taux d'impression"/>
+			</mx:verticalAxis> 
+		</mx:LineSeries>
+	</mx:series>		
+</mx:LineChart>

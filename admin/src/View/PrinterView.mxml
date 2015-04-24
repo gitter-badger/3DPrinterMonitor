@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   backgroundColor="0"
+			   close="closeMe(event)"
+			   title="Impression en cours..."
+			   creationComplete="titlewindow1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import Control.InteractionEvent;
+			import Control.PeerToPeerEvent;
+			import Control.ServerEvent;
+			
+			import Model.Constants;
+			
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			
+			import org.osmf.net.StreamType;
+
+			public static const VIDEOIN_WIDTH:int=480;
+			public static const VIDEOIN_HEIGHT:int=360;
+
+			public var camera:Camera;
+			public var timer:Timer = new Timer(1000);
+			public var seconds:int = 0;
+
+			protected function webcamVD_creationCompleteHandler(event:FlexEvent):void
+			{
+				if(FlexGlobals.topLevelApplication.peerToPeer.streamIn)
+				{
+					trace("FlexGlobals.topLevelApplication.peerToPeer.streamIn: "+FlexGlobals.topLevelApplication.peerToPeer.streamIn);
+					webcamVD.videoObject.attachNetStream(FlexGlobals.topLevelApplication.peerToPeer.streamIn);
+					FlexGlobals.topLevelApplication.peerToPeer.streamIn.play("media");
+					timer.addEventListener(TimerEvent.TIMER, onTimer, false, 0, true);
+					timer.start();
+				}
+			}
+
+			private function onTimer(event:TimerEvent):void
+			{
+				seconds++;
+				title="Impression en cours... "+Constants.timeFormat(seconds);
+			}
+
+			protected function closeMe(event:CloseEvent=null):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+			
+			protected function titlewindow1_creationCompleteHandler(event:FlexEvent):void
+			{
+				systemManager.addEventListener(PeerToPeerEvent.STREAM_STOPPED, handleBroadcastStopped, true, 0, false);
+			}
+
+			private function handleBroadcastStopped(event:PeerToPeerEvent):void
+			{
+				dispatchEvent(new ServerEvent(ServerEvent.REFRESH_PRINTLOGS, true, true, new Dictionary()));
+				closeMe();
+			}
+			
+		]]>
+	</fx:Script>
+	<s:VideoDisplay id="webcamVD"
+					width="640"
+					height="480"
+					creationComplete="webcamVD_creationCompleteHandler(event)">
+		<s:source>
+			<s:DynamicStreamingVideoSource host=""
+										   streamType="{StreamType.LIVE}">
+				<s:DynamicStreamingVideoItem/>
+			</s:DynamicStreamingVideoSource>
+		</s:source>
+	</s:VideoDisplay>
+</s:TitleWindow>

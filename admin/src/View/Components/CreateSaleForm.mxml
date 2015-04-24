@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:Group xmlns:fx="http://ns.adobe.com/mxml/2009"
+		 xmlns:s="library://ns.adobe.com/flex/spark"
+		 xmlns:mx="library://ns.adobe.com/flex/mx"
+		 xmlns:valueObjects="valueObjects.*"
+		 xmlns:salesservices="services.salesservices.*"
+		 width="100%" height="100%">
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			
+			protected function button_clickHandler(event:MouseEvent):void
+			{
+				var sales2:Sales = new Sales();
+				sales2.idsales = parseInt(idsalesTextInput.text);
+				sales2.models_idmodels = parseInt(models_idmodelsTextInput.text);
+				sales2.pricesold = pricesoldTextInput.text;
+				sales2.date = dateDateField.selectedDate;
+				
+				createSalesResult.token = salesServices.createSales(sales2);
+			}
+			
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<valueObjects:Sales id="sales"/>
+		<salesservices:SalesServices id="salesServices"
+									 fault="Alert.show(event.fault.faultString + '\n' + event.fault.faultDetail)"
+									 showBusyCursor="true"/>
+		<s:CallResponder id="createSalesResult"/>
+		<!-- Place non-visual elements (e.g., services, value objects) here -->
+	</fx:Declarations>
+	<s:Form defaultButton="{button}">
+		<s:FormItem label="Idsales">
+			<s:TextInput id="idsalesTextInput" text="{sales.idsales}"/>
+		</s:FormItem>
+		<s:FormItem label="Models_idmodels">
+			<s:TextInput id="models_idmodelsTextInput" text="{sales.models_idmodels}"/>
+		</s:FormItem>
+		<s:FormItem label="Pricesold">
+			<s:TextInput id="pricesoldTextInput" text="{sales.pricesold}"/>
+		</s:FormItem>
+		<s:FormItem label="Date">
+			<mx:DateField id="dateDateField" selectedDate="{sales.date}"/>
+		</s:FormItem>
+		<s:Button id="button" label="CreateSales" click="button_clickHandler(event)"/>
+	</s:Form>
+	<s:Form>
+		<s:FormItem label="CreateSales">
+			<s:TextInput id="createSalesTextInput" text="{createSalesResult.lastResult as int}"/>
+		</s:FormItem>
+	</s:Form>
+	
+</s:Group>

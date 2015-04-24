@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:HGroup xmlns:fx="http://ns.adobe.com/mxml/2009"
+		  xmlns:s="library://ns.adobe.com/flex/spark"
+		  xmlns:mx="library://ns.adobe.com/flex/mx"
+		  width="100%"
+		  gap="10"
+		  paddingBottom="10"
+		  paddingLeft="10"
+		  paddingRight="20"
+		  paddingTop="10"
+		  height="20"
+		  verticalAlign="middle"
+		  creationComplete="group1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.events.FlexEvent;
+
+			import Control.InteractionEvent;
+
+			private var interactionEvent:InteractionEvent;
+			private var params:Dictionary;
+
+			protected function rotateXbtn_clickHandler(event:MouseEvent):void
+			{
+				dispatchRotation(event, "x");
+			}
+
+			protected function rotateYbtn_clickHandler(event:MouseEvent):void
+			{
+				dispatchRotation(event, "y");
+			}
+
+			protected function rotateZbtn_clickHandler(event:MouseEvent):void
+			{
+				dispatchRotation(event, "z");
+			}
+			
+			protected function rotateResetBtn_clickHandler(event:MouseEvent):void
+			{
+				params.level=0;
+				params.way="reset";
+				interactionEvent=new InteractionEvent(InteractionEvent.ROTATE, false, true, params);
+				dispatchEvent(interactionEvent);
+			}
+
+			private function dispatchRotation(event:MouseEvent, way:String):void
+			{
+				params.level=int(event.target.selected) * 2;
+				params.way=way;
+				interactionEvent=new InteractionEvent(InteractionEvent.ROTATE, false, true, params);
+				dispatchEvent(interactionEvent);
+			}
+
+			protected function group1_creationCompleteHandler(event:FlexEvent):void
+			{
+				params=new Dictionary();
+			}
+
+			protected function browseBtn_clickHandler(event:MouseEvent):void
+			{
+				interactionEvent=new InteractionEvent(InteractionEvent.BROWSE, true, true, null);
+				dispatchEvent(interactionEvent);
+			}
+		]]>
+	</fx:Script>
+		<s:ToggleButton id="rotateXbtn"
+							height="100%"
+							label="Rotation X"
+							click="rotateXbtn_clickHandler(event)"/>
+		<s:ToggleButton id="rotateYbtn"
+							height="100%"
+							label="Rotation Y"
+							click="rotateYbtn_clickHandler(event)"/>
+		<s:ToggleButton id="rotateZbtn"
+							height="100%"
+							label="Rotation Z"
+							click="rotateZbtn_clickHandler(event)"/>
+		<s:Button id="rotateResetBtn"
+						height="100%"
+						label="reset"
+						click="rotateResetBtn_clickHandler(event)"/>
+</s:HGroup>

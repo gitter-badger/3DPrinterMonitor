@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<s:TitleWindow xmlns:fx="http://ns.adobe.com/mxml/2009"
+			   xmlns:s="library://ns.adobe.com/flex/spark"
+			   xmlns:mx="library://ns.adobe.com/flex/mx"
+			   xmlns:View="View.*"
+			   xmlns:printedmodelsservice="services.printedmodelsservice.*"
+			   xmlns:valueObjects="valueObjects.*"
+			   width="100%" height="100%"
+			   close="closeMe(event)" 
+			   creationComplete="vgroup1_creationCompleteHandler(event)">
+	<fx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.core.FlexGlobals;
+			import mx.events.CloseEvent;
+			import mx.events.FlexEvent;
+			import mx.managers.PopUpManager;
+			import mx.rpc.events.ResultEvent;
+
+			import Control.InteractionEvent;
+
+			import valueObjects.Type3DModels;
+
+			[Bindable]
+			public var type3DModels:Type3DModels;
+
+			protected function closeMe(event:CloseEvent=null):void
+			{
+				PopUpManager.removePopUp(this);
+			}
+
+			protected function button2_clickHandler(event:MouseEvent):void
+			{
+				type3DModels.STLfile = sTLfileTextInput.text;
+				type3DModels.name = nameTextInput.text;
+				type3DModels.sizeX = sizeXTextInput.text;
+				type3DModels.sizeY = sizeYTextInput.text;
+				type3DModels.sizeZ = sizeZTextInput.text;
+				type3DModels.weight = weightTextInput.text;
+				type3DModels.cost = costTextInput.text;
+				type3DModels.RRP = rRPTextInput.text;
+				type3DModels.TVA = tVATextInput.text;
+				update3DModels(type3DModels);
+				printedModelsService.commit();
+				//trace("> " + FlexGlobals.topLevelApplication.selectedModel.name);
+			}
+
+			protected function vgroup1_creationCompleteHandler(event:FlexEvent):void
+			{
+				handleSelectedModelChanged();
+				systemManager.addEventListener(InteractionEvent.SELECTED_MODEL_CHANGED, handleSelectedModelChanged, true);
+			}
+
+			private function handleSelectedModelChanged(event:InteractionEvent = null):void
+			{
+				type3DModels = FlexGlobals.topLevelApplication.selectedModel;	
+			}
+
+
+			protected function update3DModels(item:Type3DModels):void
+			{
+				update3DModelsResult.token = printedModelsService.update3DModels(item);
+				closeMe();
+			}
+
+			protected function printedModelsService_resultHandler(event:ResultEvent):void
+			{
+				trace("fuu");
+			}
+
+		]]>
+	</fx:Script>
+	<fx:Declarations>
+		<s:CallResponder id="update3DModelsResult"/>
+		<printedmodelsservice:PrintedModelsService id="printedModelsService"
+												   result="printedModelsService_resultHandler(event)"
+												   fault="Alert.show(event.fault.faultString + '\n' + event.fault.faultDetail)"
+												   showBusyCursor="true"/>
+	</fx:Declarations>
+	<s:HGroup width="100%" height="100%" gap="20" horizontalAlign="center" verticalAlign="middle">
+		<s:Form defaultButton="{button2}" width="280">
+			<s:layout>
+				<s:VerticalLayout paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" horizontalAlign="center" gap="5"/>
+			</s:layout>
+			<s:FormItem label="Fichier" width="100%">
+				<s:TextInput id="sTLfileTextInput" text="{type3DModels.STLfile}" width="100%"/>
+			</s:FormItem>
+			<s:FormItem label="Nom" width="100%">
+				<s:TextInput id="nameTextInput" text="{type3DModels.name}" width="100%"/>
+			</s:FormItem>
+			<s:FormHeading label="Dimensions" width="100%" />
+			<s:FormItem width="100%">
+				<s:HGroup verticalAlign="middle" width="100%">
+					<s:TextInput id="sizeXTextInput" text="{type3DModels.sizeX}" width="100%"/>
+					<s:Label text="X" />
+					<s:TextInput id="sizeYTextInput" text="{type3DModels.sizeY}" width="100%"/>
+					<s:Label text="X" />
+					<s:TextInput id="sizeZTextInput" text="{type3DModels.sizeZ}" width="100%"/>
+				</s:HGroup>
+			</s:FormItem>
+			<s:FormItem label="Poids" width="100%">
+				<s:TextInput id="weightTextInput" text="{type3DModels.weight}" width="100%"/>
+			</s:FormItem>
+			<s:FormItem label="Cout" width="100%">
+				<s:TextInput id="costTextInput" text="{type3DModels.cost}" width="100%"/>
+			</s:FormItem>
+			<s:FormItem label="Prix" width="100%">
+				<s:TextInput id="rRPTextInput" text="{type3DModels.RRP}" width="100%"/>
+			</s:FormItem>
+			<s:FormItem label="TVA" width="100%">
+				<s:TextInput id="tVATextInput" text="{type3DModels.TVA}" width="100%"/>
+			</s:FormItem>
+			<s:Button id="button2" label="Mettre a jour" height="40" width="100%" click="button2_clickHandler(event)" horizontalCenter="0"/>
+		</s:Form>
+		<!--<View:STLViewer id="stlviewer" width="100%" height="100%" />-->
+	</s:HGroup>
+</s:TitleWindow>
