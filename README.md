@@ -9,7 +9,7 @@ A website to monitor a 3D printer activity
 
 **Development time:** 2 weeks
 
-**Requirements**
+**Tools:**
 
 - PHP 5.5 with Zend Framework (see Lab repo) and MySQL
 - Flex 4.6 with RTMP
@@ -24,12 +24,6 @@ A website to monitor a 3D printer activity
 
 1. Connect a camera via USB
 2. Go to http://lab.st-f.net/3DPrintMonitor
-
-**Developer's manual**
-
-1. Install Flash Builder 4.6 Premium or Intellij IDEA Premium
-2. Make sure the Lab repo is checked out and this repo folder is included inside the Lab repo (the Lab's .gitignore contains 3DPrintMonitor). 
-
 
 **Screenshots**
 
